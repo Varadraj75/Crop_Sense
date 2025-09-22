@@ -16,9 +16,9 @@ Through a multilingual mobile application, the platform provides **crop recommen
 
 ## 🛠️ Tech Stack  
 - **Frontend:** React.js / HTML / CSS / JavaScript  
-- **Backend:** Node.js / Express  
-- **AI/ML Models:** Python, TensorFlow / PyTorch  
-- **Database:** MongoDB / Firebase  
+- **Backend:** flask(python) 
+- **AI/ML Models:** Python, TensorFlow / PyTorch (future integration) 
+- **Database:** Firebase and MySQL
 - **APIs:** Weather API, Soil Data API, Market Price API  
 
 ---
