@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop Sense</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .farm-gradient {
+            background: linear-gradient(to right, #10b981, #3b82f6);
+        }
+        .chatbot-gradient {
+            background: linear-gradient(to right, #7c3aed, #4f46e5);
+        }
+        .page { display: none; }
+        .page.active { display: block; }
+        .chatbot-container { transition: all 0.3s ease-in-out; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .typing-dot {
+            animation: bounce 1.2s infinite ease-in-out;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        .suggestions-box {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: #334155; /* slate-700 */
+            border: 1px solid #475569; /* slate-600 */
+            border-top: none;
+            border-radius: 0 0 0.375rem 0.375rem;
+            z-index: 10;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .suggestion-item {
+            padding: 0.5rem;
+            cursor: pointer;
+            color: #e2e8f0; /* slate-200 */
+        }
+        .suggestion-item:hover {
+            background-color: #475569; /* slate-600 */
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-300">
+
+    <!-- Header -->
+    <header class="bg-slate-800/80 backdrop-blur-sm shadow-md shadow-slate-900/50 sticky top-0 z-40 border-b border-slate-700">
+         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center py-4">
+            <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🌱 Crop Sense</h1>
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <select id="language-selector" class="text-sm sm:text-base bg-slate-700 border-slate-600 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-white">
+                    <option value="en">English</option>
+                    <option value="hi">हिंदी (Hindi)</option>
+                    <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                    <option value="te">తెలుగు (Telugu)</option>
+                    <option value="ta">தமிழ் (Tamil)</option>
+                    <option value="mr">मराठी (Marathi)</option>
+                    <option value="bn">বাংলা (Bengali)</option>
+                    <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+                    <option value="gu">ગુજરાતી (Gujarati)</option>
+                    <option value="ml">മലയാളം (Malayalam)</option>
+                    <option value="or">ଓଡିଆ (Odia)</option>
+                    <option value="as">অসমীয়া (Assamese)</option>
+                    <option value="bho">भोजपुरी (Bihari)</option>
+                    <option value="sck">नागपुरी (Jharkhandi)</option>
+                </select>
+                <button id="dashboard-button" class="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition duration-300 hidden md:block" data-translate="farmer_dashboard">Farmer Dashboard</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="bg-slate-800 shadow-sm border-b border-slate-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-center items-center flex-wrap space-x-2 sm:space-x-6 py-3">
+                 <button data-page="home" class="nav-btn font-semibold text-emerald-400 border-b-2 border-emerald-400 px-3 py-2 text-sm sm:text-base" data-translate="home">Home</button>
+                 <button data-page="recommendation" class="nav-btn text-slate-400 hover:text-emerald-400 px-3 py-2 text-sm sm:text-base" data-translate="crop_recommendation">Crop Suggestion</button>
+                 <button data-page="insights" class="nav-btn text-slate-400 hover:text-emerald-400 px-3 py-2 text-sm sm:text-base" data-translate="soil_weather">Soil & Weather</button>
+                 <button data-page="disease" class="nav-btn text-slate-400 hover:text-emerald-400 px-3 py-2 text-sm sm:text-base" data-translate="disease_detection">Disease Detection</button>
+                 <button data-page="market" class="nav-btn text-slate-400 hover:text-emerald-400 px-3 py-2 text-sm sm:text-base" data-translate="market_prices">Market Prices</button>
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- Main Content -->
+    <main class="w-full max-w-7xl mx-auto p-4 md:p-6">
+
+        <!-- Homepage / Landing Page -->
+        <section id="page-home" class="page active fade-in">
+            <div class="rounded-lg farm-gradient text-white p-6 sm:p-8 md:p-12 text-center shadow-lg">
+                <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-4" data-translate="welcome_title">Smart Farming for a Better Future</h2>
+                <p class="text-base sm:text-lg md:text-xl mb-8" data-translate="welcome_subtitle">Get AI-powered insights for crop selection, disease detection, and market prices. All in your local language.</p>
+                <button id="start-suggestion-btn" class="bg-white text-indigo-600 font-bold py-2 px-6 sm:py-3 sm:px-8 rounded-full text-base sm:text-lg hover:bg-slate-200 transition transform hover:scale-105" data-translate="start_crop_suggestion">Start Crop Suggestion</button>
+            </div>
+        </section>
+
+        <!-- AI Crop Recommendation Tool -->
+        <section id="page-recommendation" class="page fade-in">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-emerald-400" data-translate="crop_recommendation_title">AI Crop Recommendation</h2>
+            <div class="bg-slate-800 p-6 rounded-lg shadow-md border border-slate-700">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div>
+                        <label class="block font-medium mb-1" data-translate="soil_type">Soil Type</label>
+                        <select class="w-full p-2 border rounded-md bg-slate-700 border-slate-600 text-slate-200">
+                            <option data-translate="soil_alluvial">Alluvial Soil</option>
+                            <option data-translate="soil_black">Black Soil</option>
+                            <option data-translate="soil_red">Red Soil</option>
+                            <option data-translate="soil_laterite">Laterite Soil</option>
+                        </select>
+                    </div>
+                    <div class="relative">
+                        <label class="block font-medium mb-1" data-translate="location">Location</label>
+                        <input id="location-input" type="text" data-translate-placeholder="location_placeholder" placeholder="e.g., Bengaluru, Karnataka" class="w-full p-2 border rounded-md bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-400">
+                        <div id="location-suggestions" class="suggestions-box hidden"></div>
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1" data-translate="water_availability">Water Availability (Annual)</label>
+                        <select class="w-full p-2 border rounded-md bg-slate-700 border-slate-600 text-slate-200">
+                            <option data-translate="water_high">High (Above 1500mm)</option>
+                            <option data-translate="water_medium">Medium (800-1500mm)</option>
+                            <option data-translate="water_low">Low (Below 800mm)</option>
+                        </select>
+                    </div>
+                    <div class="relative">
+                        <label class="block font-medium mb-1" data-translate="past_crops">Past Crops</label>
+                        <input id="past-crops-input" type="text" data-translate-placeholder="past_crops_placeholder" placeholder="e.g., Rice, Wheat" class="w-full p-2 border rounded-md bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-400">
+                        <div id="past-crops-suggestions" class="suggestions-box hidden"></div>
+                    </div>
+                </div>
+                <div class="text-center mt-6">
+                    <button id="get-recommendation-btn" class="px-8 py-3 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600" data-translate="get_suggestion">Get Suggestion</button>
+                </div>
+            </div>
+
+            <div id="recommendation-results" class="mt-8 hidden">
+                <h3 class="text-2xl font-bold mb-4 text-slate-200" data-translate="recommendation_results_title">Top Recommendations</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-slate-800 p-5 rounded-lg shadow-md border-l-4 border-emerald-500">
+                        <h4 class="text-xl font-bold" data-translate="rec_card1_title">Ragi (Finger Millet)</h4>
+                        <p class="text-sm text-slate-400 mb-4" data-translate="rec_card1_subtitle">Drought resistant, high demand</p>
+                        <div class="space-y-3">
+                            <p><strong data-translate="rec_yield_label">Yield:</strong> ~15-20 quintals/acre</p>
+                            <p><strong data-translate="rec_profit_label">Profit:</strong> <span class="text-emerald-400 font-semibold" data-translate="rec_profit_value_excellent">Excellent</span></p>
+                            <p><strong data-translate="rec_sustainability_label">Sustainability:</strong> <span class="text-sky-400 font-semibold" data-translate="rec_sustainability_value_high">High</span> (Low water need)</p>
+                        </div>
+                    </div>
+                    <div class="bg-slate-800 p-5 rounded-lg shadow-md border-l-4 border-amber-500">
+                         <h4 class="text-xl font-bold" data-translate="rec_card2_title">Tomato</h4>
+                        <p class="text-sm text-slate-400 mb-4" data-translate="rec_card2_subtitle">High market value, needs care</p>
+                        <div class="space-y-3">
+                            <p><strong data-translate="rec_yield_label">Yield:</strong> ~10-12 tonnes/acre</p>
+                            <p><strong data-translate="rec_profit_label">Profit:</strong> <span class="text-emerald-400 font-semibold" data-translate="rec_profit_value_very_high">Very High</span></p>
+                            <p><strong data-translate="rec_sustainability_label">Sustainability:</strong> <span class="text-amber-400 font-semibold" data-translate="rec_sustainability_value_medium">Medium</span> (Pest risk)</p>
+                        </div>
+                    </div>
+                    <div class="bg-slate-800 p-5 rounded-lg shadow-md border-l-4 border-sky-500">
+                         <h4 class="text-xl font-bold" data-translate="rec_card3_title">Maize</h4>
+                        <p class="text-sm text-slate-400 mb-4" data-translate="rec_card3_subtitle">Versatile, stable market</p>
+                        <div class="space-y-3">
+                            <p><strong data-translate="rec_yield_label">Yield:</strong> ~25-30 quintals/acre</p>
+                            <p><strong data-translate="rec_profit_label">Profit:</strong> <span class="text-amber-400 font-semibold" data-translate="rec_profit_value_good">Good</span></p>
+                            <p><strong data-translate="rec_sustainability_label">Sustainability:</strong> <span class="text-sky-400 font-semibold" data-translate="rec_sustainability_value_high">High</span> (Improves soil structure)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Soil & Weather Insights -->
+        <section id="page-insights" class="page fade-in">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-emerald-400" data-translate="soil_weather_title">Soil & Weather Insights</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-slate-800 p-6 rounded-lg shadow-md border border-slate-700">
+                    <h3 class="text-xl font-bold mb-4" data-translate="weather_forecast_title">Live Weather Forecast (Bengaluru)</h3>
+                    <div class="flex flex-col sm:flex-row items-center justify-around text-center border-b border-slate-700 pb-4 mb-4">
+                        <div class="mb-4 sm:mb-0">
+                            <p class="text-5xl">⛅</p>
+                            <p class="text-4xl sm:text-5xl font-bold">28°C</p>
+                            <p class="text-slate-400" data-translate="weather_condition">Partly Cloudy</p>
+                        </div>
+                        <div class="space-y-2">
+                            <p><strong data-translate="weather_rainfall">Rainfall:</strong> 5mm expected</p>
+                            <p><strong data-translate="weather_humidity">Humidity:</strong> 75%</p>
+                            <p><strong data-translate="weather_wind">Wind:</strong> 12 km/h</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap justify-around text-center text-sm">
+                        <div class="w-1/2 sm:w-1/4 p-1"><p class="font-bold" data-translate="weather_tomorrow">Tomorrow (Sep 22)</p><p>29°C 🌦️</p></div>
+                        <div class="w-1/2 sm:w-1/4 p-1"><p class="font-bold">Sep 23</p><p>30°C ☀️</p></div>
+                        <div class="w-1/2 sm:w-1/4 p-1"><p class="font-bold">Sep 24</p><p>27°C ⛈️</p></div>
+                        <div class="w-1/2 sm:w-1/4 p-1"><p class="font-bold">Sep 25</p><p>29°C ⛅</p></div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 p-6 rounded-lg shadow-md border border-slate-700">
+                    <h3 class="text-xl font-bold mb-4" data-translate="soil_data_title">Soil Data (via Bhuvan API)</h3>
+                    <div class="space-y-3">
+                        <p><strong data-translate="soil_data_type_label">Type:</strong> <span class="font-semibold" data-translate="soil_data_type_value">Red Sandy Loam</span></p>
+                        <p><strong data-translate="soil_data_ph_label">pH Level:</strong> <span class="font-semibold text-sky-400" data-translate="soil_data_ph_value">6.8 (Optimal)</span></p>
+                        <p><strong data-translate="soil_data_n_label">Nitrogen (N):</strong> <span class="font-semibold text-amber-400" data-translate="soil_data_n_value">Low</span></p>
+                        <p><strong data-translate="soil_data_p_label">Phosphorus (P):</strong> <span class="font-semibold text-emerald-400" data-translate="soil_data_p_value">Good</span></p>
+                        <p><strong data-translate="soil_data_k_label">Potassium (K):</strong> <span class="font-semibold text-emerald-400" data-translate="soil_data_k_value">Good</span></p>
+                    </div>
+                    <p class="text-sm mt-4 text-slate-400" data-translate="soil_data_recommendation">Recommendation: Add nitrogen-rich fertilizer.</p>
+                </div>
+
+                <div class="lg:col-span-3 bg-amber-900/40 border-l-4 border-amber-500 text-amber-300 p-4 rounded-lg shadow-md">
+                    <h4 class="font-bold" data-translate="weather_alert_title">Alert! Heavy rainfall expected on Sep 24.</h4>
+                    <p data-translate="weather_alert_body">Consider postponing irrigation and ensuring proper drainage for standing crops.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Disease & Pest Detection -->
+        <section id="page-disease" class="page fade-in">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-emerald-400" data-translate="disease_detection_title">Disease & Pest Detection</h2>
+            <div class="bg-slate-800 p-6 rounded-lg shadow-md text-center border border-slate-700">
+                <p class="mb-4" data-translate="disease_upload_prompt">Upload a photo of the affected crop to get an instant diagnosis from our AI.</p>
+                <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                    <button id="use-camera-btn" class="px-6 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition" data-translate="disease_use_camera">📷 Use Camera</button>
+                    <button id="upload-photo-btn" class="px-6 py-3 bg-slate-700 text-slate-200 rounded-lg hover:bg-slate-600 transition" data-translate="disease_upload_photo">🖼️ Upload Photo</button>
+                </div>
+                <div id="disease-result" class="mt-8 text-left hidden p-5 border border-slate-700 rounded-lg bg-slate-800/50">
+                    <h3 class="text-xl font-bold mb-2"><span data-translate="disease_diagnosis_label">Diagnosis:</span> <span class="text-red-400" data-translate="disease_name_placeholder">Tomato Late Blight</span></h3>
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <img src="https://placehold.co/200x200/eab308/FFFFFF?text=Diseased+Leaf" alt="Diseased Leaf" class="rounded-lg object-cover w-full md:w-48 h-auto">
+                        <div>
+                            <h4 class="font-bold mt-4 md:mt-0" data-translate="disease_treatment_label">Treatment Suggestions:</h4>
+                            <ul class="list-disc list-inside mt-2 space-y-1 text-slate-300">
+                                <li data-translate="disease_treatment_1">Remove and destroy infected plants immediately.</li>
+                                <li data-translate="disease_treatment_2">Ensure proper spacing for air circulation.</li>
+                                <li data-translate="disease_treatment_3">Apply copper-based fungicides as a preventive measure.</li>
+                                <li data-translate="disease_treatment_4"><strong>Organic Solution:</strong> Spray with a neem oil solution.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Market Price Dashboard -->
+        <section id="page-market" class="page fade-in">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-emerald-400" data-translate="market_prices_title">Live Market Prices (Agmarknet)</h2>
+            <div class="bg-slate-800 p-6 rounded-lg shadow-md border border-slate-700">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 items-end">
+                    <div>
+                        <label for="state-select" class="block text-sm font-medium mb-1" data-translate="market_select_state">State</label>
+                        <select id="state-select" class="w-full p-2 border rounded-md bg-slate-700 border-slate-600 text-slate-200"></select>
+                    </div>
+                    <div>
+                        <label for="district-select" class="block text-sm font-medium mb-1" data-translate="market_select_district">District</label>
+                        <select id="district-select" class="w-full p-2 border rounded-md bg-slate-700 border-slate-600 text-slate-200"></select>
+                    </div>
+                     <div>
+                        <label for="mandi-select" class="block text-sm font-medium mb-1" data-translate="market_select_mandi">Mandi</label>
+                        <select id="mandi-select" class="w-full p-2 border rounded-md bg-slate-700 border-slate-600 text-slate-200"></select>
+                    </div>
+                    <button id="search-prices-btn" class="w-full px-4 py-2 bg-indigo-500 text-white font-semibold rounded-lg hover:bg-indigo-600" data-translate="market_search_btn">Search Prices</button>
+                </div>
+                   <div class="overflow-x-auto">
+                       <table class="w-full text-left">
+                            <thead>
+                                <tr class="bg-slate-700">
+                                    <th class="p-3" data-translate="market_table_header_mandi">Mandi (Market)</th>
+                                    <th class="p-3" data-translate="market_table_header_crop">Crop</th>
+                                    <th class="p-3" data-translate="market_table_header_price">Price (per Quintal)</th>
+                                    <th class="p-3" data-translate="market_table_header_trend">Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody id="market-table-body">
+                                <!-- Data will be populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                <div class="mt-8 h-80 relative">
+                     <h3 id="market-chart-title-element" class="text-xl font-bold mb-4" data-translate="market_chart_title_default">Price Trend</h3>
+                     <canvas id="priceChart"></canvas>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Farmer Dashboard -->
+        <section id="page-dashboard" class="page fade-in">
+             <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-emerald-400" data-translate="farmer_dashboard_title">Farmer Dashboard</h2>
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- My Farm History -->
+                <div class="bg-slate-800 p-6 rounded-lg shadow-md border border-slate-700">
+                    <h3 class="text-xl font-bold mb-4" data-translate="my_farm_history">My Farm History</h3>
+                    <ul class="list-disc list-inside space-y-2">
+                       <li><strong data-translate="farm_location">Location:</strong> <span data-translate="farm_location_value">Bengaluru, Karnataka</span></li>
+                       <li><strong data-translate="last_soil_test">Last Soil Test:</strong> <span data-translate="last_soil_test_value">July 15, 2025 (pH 6.8, N Low)</span></li>
+                       <li><strong data-translate="previous_crop">Previous Crop:</strong> <span data-translate="previous_crop_value">Ragi (Kharif 2024) - Good Yield</span></li>
+                       <li><strong data-translate="next_crop_plan">Next Crop Plan:</strong> <span data-translate="next_crop_plan_value">Tomato (Rabi 2025)</span></li>
+                    </ul>
+                </div>
+
+                <!-- Profitability Outlook -->
+                <div class="bg-slate-800 p-6 rounded-lg shadow-md border border-slate-700">
+                    <h3 class="text-xl font-bold mb-4" data-translate="profitability_outlook">Profitability Outlook (Tomato)</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-sm text-slate-400" data-translate="est_revenue">Est. Revenue</p>
+                            <p class="text-2xl font-bold text-emerald-400">₹2,50,000</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-400" data-translate="est_costs">Est. Costs</p>
+                            <p class="text-xl font-semibold text-amber-400">₹75,000</p>
+                        </div>
+                        <div class="border-t border-slate-700 pt-3">
+                            <p class="text-sm text-slate-400" data-translate="net_profit">Net Profit</p>
+                            <p class="text-2xl font-bold text-emerald-400">₹1,75,000</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive To-Do List -->
+                 <div class="bg-slate-800 p-6 rounded-lg shadow-md border border-slate-700">
+                    <h3 class="text-xl font-bold mb-4" data-translate="personalized_todo">Personalized To-Do List</h3>
+                    <div class="flex space-x-2 mb-4">
+                        <input id="new-task-input" type="text" data-translate-placeholder="add_task_placeholder" placeholder="Add a new task..." class="w-full p-2 border rounded-md bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-400">
+                        <button id="add-task-btn" class="px-4 py-2 bg-indigo-500 text-white font-semibold rounded-lg hover:bg-indigo-600" data-translate="add_task_btn">Add</button>
+                    </div>
+                    <ul id="todo-list" class="space-y-3">
+                       <!-- JS will populate this -->
+                    </ul>
+                </div>
+
+                <!-- Yield History Chart -->
+                <div class="bg-slate-800 p-6 rounded-lg shadow-md border border-slate-700">
+                    <h3 class="text-xl font-bold mb-4" data-translate="yield_history">Yield History</h3>
+                    <div class="h-64 relative">
+                        <canvas id="yieldChart"></canvas>
+                    </div>
+                </div>
+
+             </div>
+        </section>
+
+    </main>
+
+    <!-- AI Chatbot -->
+    <div id="chatbot" class="fixed bottom-2 right-2 sm:bottom-5 sm:right-5 z-50">
+        <div id="chatbot-window" class="chatbot-container w-[90vw] max-w-sm sm:w-80 h-[70vh] sm:h-96 bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex-col hidden">
+            <div class="chatbot-gradient text-white p-3 rounded-t-lg flex justify-between items-center">
+                <h3 class="font-bold" data-translate="chatbot_title">Crop Sense Assistant</h3>
+                <button id="close-chatbot" class="text-white text-2xl leading-none">&times;</button>
+            </div>
+            <div id="chat-messages" class="flex-1 p-3 overflow-y-auto flex flex-col space-y-2">
+                <div class="text-sm bg-slate-700 p-2 rounded-lg self-start w-fit max-w-[85%]" data-translate="chatbot_welcome">How can I help you today?</div>
+            </div>
+            <div class="p-2 border-t border-slate-700 flex">
+                <input type="text" id="chatbot-input" data-translate-placeholder="chatbot_placeholder" placeholder="Ask a question..." class="w-full px-2 py-1 border rounded-md bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-400">
+                <button id="chatbot-send" class="ml-2 px-3 py-1 bg-violet-500 text-white rounded-md" data-translate="chatbot_send">Send</button>
+            </div>
+        </div>
+        <button id="chatbot-toggle" class="bg-violet-600 text-white rounded-full p-3 sm:p-4 shadow-lg hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-8 sm:w-8" viewBox="http://www.w3.org/2000/svg" fill="currentColor">
+              <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
+              <path d="M15 7v2a2 2 0 01-2 2h-2v-4h2a2 2 0 012 2z" />
+            </svg>
+        </button>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const pages = document.querySelectorAll('.page');
+    const navButtons = document.querySelectorAll('.nav-btn');
+    const startSuggestionBtn = document.getElementById('start-suggestion-btn');
+    const getRecommendationBtn = document.getElementById('get-recommendation-btn');
+    const recommendationResults = document.getElementById('recommendation-results');
+    const languageSelector = document.getElementById('language-selector');
+    const dashboardButton = document.getElementById('dashboard-button');
+    const uploadPhotoButton = document.getElementById('upload-photo-btn');
+    const priceChartCanvas = document.getElementById('priceChart');
+    const yieldChartCanvas = document.getElementById('yieldChart');
+    const chatbotInput = document.getElementById('chatbot-input');
+    const chatbotSend = document.getElementById('chatbot-send');
+    const chatMessages = document.getElementById('chat-messages');
+    const closeChatbotBtn = document.getElementById('close-chatbot');
+    const stateSelect = document.getElementById('state-select');
+    const districtSelect = document.getElementById('district-select');
+    const mandiSelect = document.getElementById('mandi-select');
+    const searchPricesBtn = document.getElementById('search-prices-btn');
+    const marketTableBody = document.getElementById('market-table-body');
+    const marketChartTitleElement = document.getElementById('market-chart-title-element');
+    const newTaskInput = document.getElementById('new-task-input');
+    const addTaskBtn = document.getElementById('add-task-btn');
+    const todoList = document.getElementById('todo-list');
+
+    // --- Autocomplete inputs ---
+    const locationInput = document.getElementById('location-input');
+    const locationSuggestions = document.getElementById('location-suggestions');
+    const pastCropsInput = document.getElementById('past-crops-input');
+    const pastCropsSuggestions = document.getElementById('past-crops-suggestions');
+
+
+    // --- Comprehensive Translations ---
+    const translations = {
+        en: { home: 'Home', crop_recommendation: 'Crop Suggestion', soil_weather: 'Soil & Weather', disease_detection: 'Disease Detection', market_prices: 'Market Prices', welcome_title: 'Smart Farming for a Better Future', welcome_subtitle: 'Get AI-powered insights for crop selection, disease detection, and market prices. All in your local language.', start_crop_suggestion: 'Start Crop Suggestion', crop_recommendation_title: 'AI Crop Recommendation', soil_type: 'Soil Type', location: 'Location', water_availability: 'Water Availability (Annual)', past_crops: 'Past Crops', get_suggestion: 'Get Suggestion', farmer_dashboard: 'Farmer Dashboard', farmer_dashboard_title: 'Farmer Dashboard', my_farm_history: 'My Farm History', farm_location: 'Location:', last_soil_test: 'Last Soil Test:', previous_crop: 'Previous Crop:', next_crop_plan: 'Next Crop Plan:', farm_location_value: 'Bengaluru, Karnataka', last_soil_test_value: 'July 15, 2025 (pH 6.8, N Low)', previous_crop_value: 'Ragi (Kharif 2024) - Good Yield', next_crop_plan_value: 'Tomato (Rabi 2025)', personalized_todo: 'Personalized To-Do List', todo_prepare_beds: 'Prepare beds for Tomato planting', todo_procure_fertilizer: 'Procure nitrogen-rich fertilizer', todo_check_pump: 'Check irrigation pump', soil_alluvial: 'Alluvial Soil', soil_black: 'Black Soil', soil_red: 'Red Soil', soil_laterite: 'Laterite Soil', location_placeholder: 'e.g., Bengaluru, Karnataka', water_high: 'High (Above 1500mm)', water_medium: 'Medium (800-1500mm)', water_low: 'Low (Below 800mm)', past_crops_placeholder: 'e.g., Rice, Wheat', recommendation_results_title: 'Top Recommendations', rec_card1_title: 'Ragi (Finger Millet)', rec_card1_subtitle: 'Drought resistant, high demand', rec_yield_label: 'Yield:', rec_profit_label: 'Profit:', rec_sustainability_label: 'Sustainability:', rec_profit_value_excellent: 'Excellent', rec_sustainability_value_high: 'High', rec_card2_title: 'Tomato', rec_card2_subtitle: 'High market value, needs care', rec_profit_value_very_high: 'Very High', rec_sustainability_value_medium: 'Medium', rec_card3_title: 'Maize', rec_card3_subtitle: 'Versatile, stable market', rec_profit_value_good: 'Good', weather_forecast_title: 'Live Weather Forecast (Bengaluru)', weather_condition: 'Partly Cloudy', weather_rainfall: 'Rainfall:', weather_humidity: 'Humidity:', weather_wind: 'Wind:', weather_tomorrow: 'Tomorrow (Sep 22)', soil_data_title: 'Soil Data (via Bhuvan API)', soil_data_type_label: 'Type:', soil_data_type_value: 'Red Sandy Loam', soil_data_ph_label: 'pH Level:', soil_data_ph_value: '6.8 (Optimal)', soil_data_n_label: 'Nitrogen (N):', soil_data_n_value: 'Low', soil_data_p_label: 'Phosphorus (P):', soil_data_p_value: 'Good', soil_data_k_label: 'Potassium (K):', soil_data_k_value: 'Good', soil_data_recommendation: 'Recommendation: Add nitrogen-rich fertilizer.', weather_alert_title: 'Alert! Heavy rainfall expected on Sep 24.', weather_alert_body: 'Consider postponing irrigation and ensuring proper drainage for standing crops.', disease_detection_title: 'Disease & Pest Detection', disease_upload_prompt: 'Upload a photo of the affected crop to get an instant diagnosis from our AI.', disease_use_camera: '📷 Use Camera', disease_upload_photo: '🖼️ Upload Photo', disease_diagnosis_label: 'Diagnosis:', disease_name_placeholder: 'Tomato Late Blight', disease_treatment_label: 'Treatment Suggestions:', disease_treatment_1: 'Remove and destroy infected plants immediately.', disease_treatment_2: 'Ensure proper spacing for air circulation.', disease_treatment_3: 'Apply copper-based fungicides as a preventive measure.', disease_treatment_4: '<strong>Organic Solution:</strong> Spray with a neem oil solution.', market_prices_title: 'Live Market Prices (Agmarknet)', market_select_state: 'State', market_select_district: 'District', market_select_mandi: 'Mandi', market_search_btn: 'Search Prices', market_table_header_mandi: 'Mandi (Market)', market_table_header_crop: 'Crop', market_table_header_price: 'Price (per Quintal)', market_table_header_trend: 'Trend', market_chart_title_default: 'Price Trend', chatbot_title: 'Crop Sense Assistant', chatbot_welcome: 'How can I help you today?', chatbot_placeholder: 'Ask a question...', chatbot_send: 'Send', chatbot_responses: ["That's a great question! As a demo assistant, I can provide this sample response.", "Let me check on that for you. Based on my demo data, here is a sample answer.", "Thinking... I'm a demo assistant, but this is an example of how I could help you.", "One moment... Okay, here is a sample response for your query."], profitability_outlook: 'Profitability Outlook (Tomato)', est_revenue: 'Est. Revenue', est_costs: 'Est. Costs', net_profit: 'Net Profit', add_task_placeholder: 'Add a new task...', add_task_btn: 'Add', yield_history: 'Yield History', yield_unit: 'Quintals per Acre' },
+        hi: { home: 'होम', crop_recommendation: 'फसल सुझाव', soil_weather: 'मिट्टी और मौसम', disease_detection: 'रोग पहचान', market_prices: 'बाजार मूल्य', welcome_title: 'बेहतर भविष्य के लिए स्मार्ट खेती', welcome_subtitle: 'फसल चयन, रोग का पता लगाने और बाजार की कीमतों के लिए एआई-संचालित जानकारी प्राप्त करें। सब आपकी स्थानीय भाषा में।', start_crop_suggestion: 'फसल सुझाव शुरू करें', crop_recommendation_title: 'एआई फसल सिफारिश', soil_type: 'मिट्टी का प्रकार', location: 'स्थान', water_availability: 'पानी की उपलब्धता (वार्षिक)', past_crops: 'पिछली फसलें', get_suggestion: 'सुझाव प्राप्त करें', farmer_dashboard: 'किसान डैशबोर्ड', farmer_dashboard_title: 'किसान डैशबोर्ड', my_farm_history: 'मेरे खेत का इतिहास', farm_location: 'स्थान:', last_soil_test: 'अंतिम मिट्टी परीक्षण:', previous_crop: 'पिछली फसल:', next_crop_plan: 'अगली फसल योजना:', farm_location_value: 'बेंगलुरु, कर्नाटक', last_soil_test_value: 'जुलाई 15, 2025 (पीएच 6.8, एन कम)', previous_crop_value: 'रागी (खरीफ 2024) - अच्छी उपज', next_crop_plan_value: 'टमाटर (रबी 2025)', personalized_todo: 'व्यक्तिगत टू-डू सूची', todo_prepare_beds: 'टमाटर रोपण के लिए क्यारियाँ तैयार करें', todo_procure_fertilizer: 'नाइट्रोजन युक्त उर्वरक खरीदें', todo_check_pump: 'सिंचाई पंप की जाँच करें', soil_alluvial: 'जलोढ़ मिट्टी', soil_black: 'काली मिट्टी', soil_red: 'लाल मिट्टी', soil_laterite: 'लेटराइट मिट्टी', location_placeholder: 'जैसे, बेंगलुरु, कर्नाटक', water_high: 'उच्च (1500 मिमी से ऊपर)', water_medium: 'मध्यम (800-1500 मिमी)', water_low: 'कम (800 मिमी से नीचे)', past_crops_placeholder: 'जैसे, चावल, गेहूं', recommendation_results_title: 'शीर्ष सिफारिशें', rec_card1_title: 'रागी (फिंगर मिलेट)', rec_card1_subtitle: 'सूखा प्रतिरोधी, उच्च मांग', rec_yield_label: 'उपज:', rec_profit_label: 'लाभ:', rec_sustainability_label: 'स्थिरता:', rec_profit_value_excellent: 'उत्कृष्ट', rec_sustainability_value_high: 'उच्च', rec_card2_title: 'टमाटर', rec_card2_subtitle: 'उच्च बाजार मूल्य, देखभाल की आवश्यकता', rec_profit_value_very_high: 'बहुत उच्च', rec_sustainability_value_medium: 'मध्यम', rec_card3_title: 'मक्का', rec_card3_subtitle: 'बहुमुखी, स्थिर बाजार', rec_profit_value_good: 'अच्छा', weather_forecast_title: 'लाइव मौसम पूर्वानुमान (बेंगलुरु)', weather_condition: 'आंशिक रूप से बादल छाए रहेंगे', weather_rainfall: 'वर्षा:', weather_humidity: 'आर्द्रता:', weather_wind: 'हवा:', weather_tomorrow: 'कल (22 सितंबर)', soil_data_title: 'मृदा डेटा (भुवन एपीआई के माध्यम से)', soil_data_type_label: 'प्रकार:', soil_data_type_value: 'लाल रेतीली दोमट', soil_data_ph_label: 'पीएच स्तर:', soil_data_ph_value: '6.8 (इष्टतम)', soil_data_n_label: 'नाइट्रोजन (एन):', soil_data_n_value: 'कम', soil_data_p_label: 'फास्फोरस (पी):', soil_data_p_value: 'अच्छा', soil_data_k_label: 'पोटेशियम (के):', soil_data_k_value: 'अच्छा', soil_data_recommendation: 'सिफारिश: नाइट्रोजन युक्त उर्वरक डालें।', weather_alert_title: 'चेतावनी! 24 सितंबर को भारी वर्षा की उम्मीद है।', weather_alert_body: 'सिंचाई स्थगित करने और खड़ी फसलों के लिए उचित जल निकासी सुनिश्चित करने पर विचार करें।', disease_detection_title: 'रोग और कीट का पता लगाना', disease_upload_prompt: 'हमारे एआई से तत्काल निदान प्राप्त करने के लिए प्रभावित फसल की एक तस्वीर अपलोड करें।', disease_use_camera: '📷 कैमरा इस्तेमाल करें', disease_upload_photo: '🖼️ फोटो अपलोड करें', disease_diagnosis_label: 'निदान:', disease_name_placeholder: 'टमाटर का पछेती झुलसा', disease_treatment_label: 'उपचार सुझाव:', disease_treatment_1: 'संक्रमित पौधों को तुरंत हटा दें और नष्ट कर दें।', disease_treatment_2: 'हवा के संचार के लिए उचित दूरी सुनिश्चित करें।', disease_treatment_3: 'निवारक उपाय के रूप में तांबा आधारित कवकनाशी लागू करें।', disease_treatment_4: '<strong>जैविक समाधान:</strong> नीम के तेल के घोल का छिड़काव करें।', market_prices_title: 'लाइव बाजार मूल्य (एगमार्कनेट)', market_select_state: 'राज्य', market_select_district: 'ज़िला', market_select_mandi: 'मंडी', market_search_btn: 'कीमतें खोजें', market_table_header_mandi: 'मंडी (बाजार)', market_table_header_crop: 'फसल', market_table_header_price: 'मूल्य (प्रति क्विंटल)', market_table_header_trend: 'प्रवृत्ति', market_chart_title_default: 'मूल्य की प्रवृत्ति', chatbot_title: 'क्रॉप सेंस सहायक', chatbot_welcome: 'आज मैं आपकी कैसे मदद कर सकता हूँ?', chatbot_placeholder: 'एक सवाल पूछें...', chatbot_send: 'भेजें', chatbot_responses: ["यह एक अच्छा सवाल है! एक डेमो सहायक के रूप में, मैं यह नमूना प्रतिक्रिया प्रदान कर सकता हूं।", "मुझे इसकी जांच करने दीजिए। मेरे डेमो डेटा के आधार पर, यहां एक नमूना उत्तर है।", "सोच रहा हूँ... मैं एक डेमो सहायक हूँ, लेकिन यह एक उदाहरण है कि मैं आपकी कैसे मदद कर सकता हूँ।"], profitability_outlook: 'लाभप्रदता आउटलुक (टमाटर)', est_revenue: 'अनुमानित राजस्व', est_costs: 'अनुमानित लागत', net_profit: 'शुद्ध लाभ', add_task_placeholder: 'नया कार्य जोड़ें...', add_task_btn: 'जोड़ें', yield_history: 'उपज का इतिहास', yield_unit: 'क्विंटल प्रति एकड़'},
+        kn: { home: 'ಮನೆ', crop_recommendation: 'ಬೆಳೆ ಸಲಹೆ', soil_weather: 'ಮಣ್ಣು ಮತ್ತು ಹವಾಮಾನ', disease_detection: 'ರೋಗ ಪತ್ತೆ', market_prices: 'ಮಾರುಕಟ್ಟೆ ಬೆಲೆಗಳು', welcome_title: 'ಉತ್ತಮ ಭವಿಷ್ಯಕ್ಕಾಗಿ ಸ್ಮಾರ್ಟ್ ಕೃಷಿ', welcome_subtitle: 'ಬೆಳೆ ಆಯ್ಕೆ, ರೋಗ ಪತ್ತೆ ಮತ್ತು ಮಾರುಕಟ್ಟೆ ಬೆಲೆಗಳಿಗಾಗಿ AI-ಚಾಲಿತ ಒಳನೋಟಗಳನ್ನು ಪಡೆಯಿರಿ. ಎಲ್ಲವೂ ನಿಮ್ಮ ಸ್ಥಳೀಯ ಭಾಷೆಯಲ್ಲಿ.', start_crop_suggestion: 'ಬೆಳೆ ಸಲಹೆ ಪ್ರಾರಂಭಿಸಿ', crop_recommendation_title: 'ಎಐ ಬೆಳೆ ಶಿಫಾರಸು', soil_type: 'ಮಣ್ಣಿನ ಪ್ರಕಾರ', location: 'ಸ್ಥಳ', water_availability: 'ನೀರಿನ ಲಭ್ಯತೆ (ವಾರ್ಷಿಕ)', past_crops: 'ಹಿಂದಿನ ಬೆಳೆಗಳು', get_suggestion: 'ಸಲಹೆ ಪಡೆಯಿರಿ', farmer_dashboard: 'ರೈತ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್', farmer_dashboard_title: 'ರೈತ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್', my_farm_history: 'ನನ್ನ ಫಾರ್ಮ್ ಇತಿಹಾಸ', farm_location: 'ಸ್ಥಳ:', last_soil_test: 'ಕೊನೆಯ ಮಣ್ಣು ಪರೀಕ್ಷೆ:', previous_crop: 'ಹಿಂದಿನ ಬೆಳೆ:', next_crop_plan: 'ಮುಂದಿನ ಬೆಳೆ ಯೋಜನೆ:', farm_location_value: 'ಬೆಂಗಳೂರು, ಕರ್ನಾಟಕ', last_soil_test_value: 'ಜುಲೈ 15, 2025 (pH 6.8, N ಕಡಿಮೆ)', previous_crop_value: 'ರಾಗಿ (ಖಾರಿಫ್ 2024) - ಉತ್ತಮ ಇಳುವರಿ', next_crop_plan_value: 'ಟೊಮ್ಯಾಟೊ (ರಬಿ 2025)', personalized_todo: 'ವೈಯಕ್ತಿಕಗೊಳಿಸಿದ ಮಾಡಬೇಕಾದ ಪಟ್ಟಿ', todo_prepare_beds: 'ಟೊಮೆಟೊ ನೆಡಲು ಹಾಸಿಗೆಗಳನ್ನು ಸಿದ್ಧಪಡಿಸಿ', todo_procure_fertilizer: 'ಸಾರಜನಕಯುಕ್ತ ಗೊಬ್ಬರವನ್ನು ಖರೀದಿಸಿ', todo_check_pump: 'ನೀರಾವರಿ ಪಂಪ್ ಪರಿಶೀಲಿಸಿ', soil_alluvial: 'ಮೆಕ್ಕಲು ಮಣ್ಣು', soil_black: 'ಕಪ್ಪು ಮಣ್ಣು', soil_red: 'ಕೆಂಪು ಮಣ್ಣು', soil_laterite: 'ಲ್ಯಾಟರೈಟ್ ಮಣ್ಣು', location_placeholder: 'ಉದಾ., ಬೆಂಗಳೂರು, ಕರ್ನಾಟಕ', water_high: 'ಹೆಚ್ಚು (1500mm ಗಿಂತ ಹೆಚ್ಚು)', water_medium: 'ಮಧ್ಯಮ (800-1500mm)', water_low: 'ಕಡಿಮೆ (800mm ಗಿಂತ ಕಡಿಮೆ)', past_crops_placeholder: 'ಉದಾ., ಅಕ್ಕಿ, ಗೋಧಿ', recommendation_results_title: 'ಉನ್ನತ ಶಿಫಾರಸುಗಳು', rec_card1_title: 'ರಾಗಿ', rec_card1_subtitle: 'ಬರ ನಿರೋಧಕ, ಹೆಚ್ಚಿನ ಬೇಡಿಕೆ', rec_yield_label: 'ಇಳುವರಿ:', rec_profit_label: 'ಲಾಭ:', rec_sustainability_label: 'ಸುಸ್ಥಿರತೆ:', rec_profit_value_excellent: 'ಅತ್ಯುತ್ತಮ', rec_sustainability_value_high: 'ಹೆಚ್ಚು', rec_card2_title: 'ಟೊಮ್ಯಾಟೋ', rec_card2_subtitle: 'ಹೆಚ್ಚಿನ ಮಾರುಕಟ್ಟೆ ಮೌಲ್ಯ, ಆರೈಕೆಯ ಅಗತ್ಯವಿದೆ', rec_profit_value_very_high: 'ತುಂಬಾ ಹೆಚ್ಚು', rec_sustainability_value_medium: 'ಮಧ್ಯಮ', rec_card3_title: 'ಮೆಕ್ಕೆಜೋಳ', rec_card3_subtitle: 'ಬಹುಮುಖ, ಸ್ಥಿರ ಮಾರುಕಟ್ಟೆ', rec_profit_value_good: 'ಒಳ್ಳೆಯದು', weather_forecast_title: 'ಲೈವ್ ಹವಾಮಾನ ಮುನ್ಸೂಚನೆ (ಬೆಂಗಳೂರು)', weather_condition: 'ಭಾಗಶಃ ಮೋಡ ಕವಿದ ವಾತಾವರಣ', weather_rainfall: 'ಮಳೆ:', weather_humidity: 'ಆರ್ದ್ರತೆ:', weather_wind: 'ಗಾಳಿ:', weather_tomorrow: 'ನಾಳೆ (ಸೆಪ್ಟೆಂಬರ್ 22)', soil_data_title: 'ಮಣ್ಣಿನ ಡೇಟಾ (ಭುವನ್ API ಮೂಲಕ)', soil_data_type_label: 'ಮಾದರಿ:', soil_data_type_value: 'ಕೆಂಪು ಮರಳು ಮಿಶ್ರಿತ ಲೋಮ್', soil_data_ph_label: 'pH ಮಟ್ಟ:', soil_data_ph_value: '6.8 (ಸೂಕ್ತ)', soil_data_n_label: 'ಸಾರಜನಕ (N):', soil_data_n_value: 'ಕಡಿಮೆ', soil_data_p_label: 'ರಂಜಕ (P):', soil_data_p_value: 'ಒಳ್ಳೆಯದು', soil_data_k_label: 'ಪೊಟ್ಯಾಸಿಯಮ್ (K):', soil_data_k_value: 'ಒಳ್ಳೆಯದು', soil_data_recommendation: 'ಶಿಫಾರಸು: ಸಾರಜನಕಯುಕ್ತ ಗೊಬ್ಬರವನ್ನು ಸೇರಿಸಿ.', weather_alert_title: 'ಎಚ್ಚರಿಕೆ! ಸೆಪ್ಟೆಂಬರ್ 24 ರಂದು ಭಾರಿ ಮಳೆಯಾಗುವ ನಿರೀಕ್ಷೆಯಿದೆ.', weather_alert_body: 'ನೀರಾವರಿಯನ್ನು ಮುಂದೂಡುವುದನ್ನು ಮತ್ತು ನಿಂತಿರುವ ಬೆಳೆಗಳಿಗೆ ಸರಿಯಾದ ಒಳಚರಂಡಿಯನ್ನು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳುವುದನ್ನು ಪರಿಗಣಿಸಿ.', disease_detection_title: 'ರೋಗ ಮತ್ತು ಕೀಟ ಪತ್ತೆ', disease_upload_prompt: 'ನಮ್ಮ AI ನಿಂದ ತ್ವರಿತ ರೋಗನಿರ್ಣಯವನ್ನು ಪಡೆಯಲು ಪೀಡಿತ ಬೆಳೆಯನ್ನು ಫೋಟೋ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ.', disease_use_camera: '📷 ಕ್ಯಾಮೆರಾ ಬಳಸಿ', disease_upload_photo: '🖼️ ಫೋಟೋ ಅಪ್ಲೋಡ್ ಮಾಡಿ', disease_diagnosis_label: 'ರೋಗನಿರ್ಣಯ:', disease_name_placeholder: 'ಟೊಮ್ಯಾಟೊ ಲೇಟ್ ಬ್ಲೈಟ್', disease_treatment_label: 'ಚಿಕಿತ್ಸೆಯ ಸಲಹೆಗಳು:', disease_treatment_1: 'ಸೋಂಕಿತ ಸಸ್ಯಗಳನ್ನು ತಕ್ಷಣ ತೆಗೆದುಹಾಕಿ ಮತ್ತು ನಾಶಮಾಡಿ.', disease_treatment_2: 'ಗಾಳಿಯ ಪ್ರಸರಣಕ್ಕಾಗಿ ಸರಿಯಾದ ಅಂತರವನ್ನು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಿ.', disease_treatment_3: 'ತಡೆಗಟ್ಟುವ ಕ್ರಮವಾಗಿ ತಾಮ್ರ ಆಧಾರಿತ ಶಿಲೀಂಧ್ರನಾಶಕಗಳನ್ನು ಅನ್ವಯಿಸಿ.', disease_treatment_4: '<strong>ಸಾವಯವ ಪರಿಹಾರ:</strong> ಬೇವಿನ ಎಣ್ಣೆಯ ದ್ರಾವಣದಿಂದ ಸಿಂಪಡಿಸಿ.', market_prices_title: 'ಲೈವ್ ಮಾರುಕಟ್ಟೆ ಬೆಲೆಗಳು (ಅಗ್ಮಾರ್ಕ್ನೆಟ್)', market_select_state: 'ರಾಜ್ಯ', market_select_district: 'ಜಿಲ್ಲೆ', market_select_mandi: 'ಮಂಡಿ', market_search_btn: 'ಬೆಲೆಗಳನ್ನು ಹುಡುಕಿ', market_table_header_mandi: 'ಮಂಡಿ (ಮಾರುಕಟ್ಟೆ)', market_table_header_crop: 'ಬೆಳೆ', market_table_header_price: 'ಬೆಲೆ (ಪ್ರತಿ ಕ್ವಿಂಟಾಲ್)', market_table_header_trend: 'ಪ್ರವೃತ್ತಿ', market_chart_title_default: 'ಬೆಲೆ ಪ್ರವೃತ್ತಿ', chatbot_title: 'ಕ್ರಾಪ್ ಸೆನ್ಸ್ ಸಹಾಯಕ', chatbot_welcome: 'ಇಂದು ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?', chatbot_placeholder: 'ಪ್ರಶ್ನೆ ಕೇಳಿ...', chatbot_send: 'ಕಳುಹಿಸು', chatbot_responses: ["ಅದು ಒಳ್ಳೆಯ ಪ್ರಶ್ನೆ! ಡೆಮೊ ಸಹಾಯಕರಾಗಿ, ನಾನು ಈ ಮಾದರಿ ಪ್ರತಿಕ್ರಿಯೆಯನ್ನು ನೀಡಬಲ್ಲೆ.", "ನನ್ನ ಡೆಮೊ ಡೇಟಾವನ್ನು ಆಧರಿಸಿ, ಇಲ್ಲಿ ಒಂದು ಮಾದರಿ ಉತ್ತರವಿದೆ.", "ಯೋಚಿಸುತ್ತಿದ್ದೇನೆ... ನಾನು ಡೆಮೊ ಸಹಾಯಕ, ಆದರೆ ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಲ್ಲೆ ಎಂಬುದಕ್ಕೆ ಇದು ಒಂದು ಉದಾಹರಣೆಯಾಗಿದೆ."], profitability_outlook: 'ಲಾಭದಾಯಕತೆಯ ದೃಷ್ಟಿಕೋನ (ಟೊಮ್ಯಾಟೊ)', est_revenue: 'ಅಂದಾಜು ಆದಾಯ', est_costs: 'ಅಂದಾಜು ವೆಚ್ಚಗಳು', net_profit: 'ನಿವ್ವಳ ಲಾಭ', add_task_placeholder: 'ಹೊಸ ಕಾರ್ಯವನ್ನು ಸೇರಿಸಿ...', add_task_btn: 'ಸೇರಿಸಿ', yield_history: 'ಇಳುವರಿ ಇತಿಹಾಸ', yield_unit: 'ಕ್ವಿಂಟಾಲ್ ಪ್ರತಿ ಎಕರೆಗೆ'},
+        te: { home: 'హోమ్', crop_recommendation: 'పంట సూచన', soil_weather: 'నేల & వాతావరణం', disease_detection: 'వ్యాధి నిర్ధారణ', market_prices: 'మార్కెట్ ధరలు', welcome_title: 'మంచి భవిష్యత్తు కోసం స్మార్ట్ వ్యవసాయం', welcome_subtitle: 'పంట ఎంపిక, వ్యాధి నిర్ధారణ మరియు మార్కెట్ ధరల కోసం AI-ఆధారిత అంతర్దృష్టులను పొందండి. అన్నీ మీ స్థానిక భాషలో.', start_crop_suggestion: 'పంట సూచనను ప్రారంభించండి', crop_recommendation_title: 'AI పంట సిఫార్సు', soil_type: 'నేల రకం', location: 'ప్రదేశం', water_availability: 'నీటి లభ్యత (వార్షిక)', past_crops: 'గత పంటలు', get_suggestion: 'సూచన పొందండి', farmer_dashboard: 'రైతు డ్యాష్‌బోర్డ్', farmer_dashboard_title: 'రైతు డ్యాష్‌బోర్డ్', my_farm_history: 'నా వ్యవసాయ చరిత్ర', farm_location: 'ప్రదేశం:', last_soil_test: 'చివరి నేల పరీక్ష:', previous_crop: 'మునుపటి పంట:', next_crop_plan: 'తదుపరి పంట ప్రణాళిక:', farm_location_value: 'బెంగళూరు, కర్ణాటక', last_soil_test_value: 'జూలై 15, 2025 (pH 6.8, N తక్కువ)', previous_crop_value: 'రాగి (ఖరీఫ్ 2024) - మంచి దిగుబడి', next_crop_plan_value: 'టమోటా (రబీ 2025)', personalized_todo: 'వ్యక్తిగతీకరించిన చేయవలసిన పనుల జాబితా', todo_prepare_beds: 'టమోటా నాటడానికి పడకలను సిద్ధం చేయండి', todo_procure_fertilizer: 'నత్రజని అధికంగా ఉండే ఎరువులను సేకరించండి', todo_check_pump: 'నీటిపారుదల పంపును తనిఖీ చేయండి', soil_alluvial: 'ఒండ్రు నేల', soil_black: 'నల్ల నేల', soil_red: 'ఎర్ర నేల', soil_laterite: 'లేటరైట్ నేల', location_placeholder: 'ఉదా., బెంగళూరు, కర్ణాటక', water_high: 'అధికం (1500mm కంటే ఎక్కువ)', water_medium: 'మధ్యస్థం (800-1500mm)', water_low: 'తక్కువ (800mm కంటే తక్కువ)', past_crops_placeholder: 'ఉదా., వరి, గోధుమ', market_prices_title: 'ప్రత్యక్ష మార్కెట్ ధరలు (అగ్మార్క్‌నెట్)', market_select_state: 'రాష్ట్రం', market_select_district: 'జిల్లా', market_select_mandi: 'మండీ', market_search_btn: 'ధరలను శోధించండి', chatbot_title: 'క్రాప్ సెన్స్ అసిస్టెంట్', chatbot_welcome: 'ఈ రోజు నేను మీకు ఎలా సహాయపడగలను?', chatbot_placeholder: 'ఒక ప్రశ్న అడగండి...', chatbot_send: 'పంపు', profitability_outlook: 'లాభదాయకత దృక్పథం (టమోటా)', est_revenue: 'అంచనా రాబడి', est_costs: 'అంచనా ఖర్చులు', net_profit: 'నికర లాభం', add_task_placeholder: 'క్రొత్త పనిని జోడించండి...', add_task_btn: 'జోడించు', yield_history: 'దిగుబడి చరిత్ర', yield_unit: 'ఎకరానికి క్వింటాళ్లు'},
+        ta: { home: 'முகப்பு', crop_recommendation: 'பயிர் பரிந்துரை', soil_weather: 'மண் & வானிலை', disease_detection: 'நோய் கண்டறிதல்', market_prices: 'சந்தை விலைகள்', welcome_title: 'சிறந்த எதிர்காலத்திற்கான έξัจசி விவசாயம்', welcome_subtitle: 'பயிர் தேர்வு, நோய் கண்டறிதல் மற்றும் சந்தை விலைகளுக்கான AI-இயங்கும் நுண்ணறிவுகளைப் பெறுங்கள். அனைத்தும் உங்கள் உள்ளூர் மொழியில்.', start_crop_suggestion: 'பயிர் பரிந்துரையைத் தொடங்கு', crop_recommendation_title: 'AI பயிர் பரிந்துரை', soil_type: 'மண் வகை', location: 'இடம்', water_availability: 'நீர் இருப்பு (ஆண்டு)', past_crops: 'கடந்த கால பயிர்கள்', get_suggestion: 'பரிந்துரை பெறுக', farmer_dashboard: 'உழவர் டாஷ்போர்டு', farmer_dashboard_title: 'உழவர் டாஷ்போர்டு', my_farm_history: 'எனது பண்ணை வரலாறு', farm_location: 'இடம்:', last_soil_test: 'கடைசி மண் பரிசோதனை:', previous_crop: 'முந்தைய பயிர்:', next_crop_plan: 'அடுத்த பயிர் திட்டம்:', farm_location_value: 'பெங்களூரு, கர்நாடகா', last_soil_test_value: 'ஜூலை 15, 2025 (pH 6.8, N குறைவு)', previous_crop_value: 'ராகி (காரிஃப் 2024) - நல்ல மகசூல்', next_crop_plan_value: 'தக்காளி (ரபி 2025)', personalized_todo: 'தனிப்பயனாக்கப்பட்ட செய்ய வேண்டிய பட்டியல்', todo_prepare_beds: 'தக்காளி நடவு செய்ய படுக்கைகளைத் தயாரிக்கவும்', todo_procure_fertilizer: 'நைட்ரஜன் நிறைந்த உரங்களை வாங்கவும்', todo_check_pump: 'நீர்ப்பாசன பம்பை சரிபார்க்கவும்', soil_alluvial: 'வண்டல் மண்', soil_black: 'கரிசல் மண்', soil_red: 'செம்மண்', soil_laterite: 'சரளை மண்', market_prices_title: 'நேரடி சந்தை விலைகள் (அக்மார்க்நெட்)', market_select_state: 'மாநிலம்', market_select_district: 'மாவட்டம்', market_select_mandi: 'மண்டி', market_search_btn: 'விலைகளைத் தேடு', chatbot_title: 'பயிர் சென்ஸ் உதவியாளர்', chatbot_welcome: 'இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்?', chatbot_placeholder: 'ஒரு கேள்வியைக் கேளுங்கள்...', chatbot_send: 'அனுப்பு', profitability_outlook: 'லாபம் ஈட்டும் கண்ணோட்டம் (தக்காளி)', est_revenue: 'மதிப்பிடப்பட்ட வருவாய்', est_costs: 'மதிப்பிடப்பட்ட செலவுகள்', net_profit: 'நிகர லாபம்', add_task_placeholder: 'புதிய பணியைச் சேர்க்கவும்...', add_task_btn: 'சேர்', yield_history: 'மகசூல் வரலாறு', yield_unit: 'ஏக்கருக்கு குவிண்டால்'},
+        mr: { home: 'होम', crop_recommendation: 'पीक सूचना', soil_weather: 'माती आणि हवामान', disease_detection: 'रोग ओळख', market_prices: 'बाजार भाव', welcome_title: 'उत्तम भविष्यासाठी स्मार्ट शेती', welcome_subtitle: 'पीक निवड, रोग ओळख आणि बाजार भावांसाठी AI-शक्तीशाली अंतर्दृष्टी मिळवा. सर्व तुमच्या स्थानिक भाषेत.', start_crop_suggestion: 'पीक सूचना सुरू करा', crop_recommendation_title: 'AI पीक शिफारस', soil_type: 'मातीचा प्रकार', location: 'स्थान', water_availability: 'पाण्याची उपलब्धता (वार्षिक)', past_crops: 'मागील पिके', get_suggestion: 'सूचना मिळवा', farmer_dashboard: 'शेतकरी डॅशबोर्ड', farmer_dashboard_title: 'शेतकरी डॅशबोर्ड', my_farm_history: 'माझ्या शेताचा इतिहास', farm_location: 'स्थान:', last_soil_test: 'शेवटची माती चाचणी:', previous_crop: 'मागील पीक:', next_crop_plan: 'पुढील पीक योजना:', farm_location_value: 'बंगळूर, कर्नाटक', last_soil_test_value: 'जुलै १५, २०२५ (पीएच ६.८, एन कमी)', previous_crop_value: 'नाचणी (खरीप २०२४) - चांगले उत्पन्न', next_crop_plan_value: 'टोमॅटो (रब्बी २०२५)', personalized_todo: 'वैयक्तिकृत कामांची यादी', todo_prepare_beds: 'टोमॅटो लागवडीसाठी बेड तयार करा', todo_procure_fertilizer: 'नायट्रोजनयुक्त खते खरेदी करा', todo_check_pump: 'सिंचन पंप तपासा', market_prices_title: 'थेट बाजार भाव (एगमार्कनेट)', market_select_state: 'राज्य', market_select_district: 'जिल्हा', market_select_mandi: 'मंडी', market_search_btn: 'किंमती शोधा', chatbot_title: 'क्रॉप सेन्स असिस्टंट', chatbot_welcome: 'आज मी तुम्हाला कशी मदत करू शकेन?', chatbot_placeholder: 'प्रश्न विचारा...', chatbot_send: 'पाठवा', profitability_outlook: 'नफा दृष्टीकोन (टोमॅटो)', est_revenue: 'अंदाजे महसूल', est_costs: 'अंदाजे खर्च', net_profit: 'निव्वळ नफा', add_task_placeholder: 'नवीन कार्य जोडा...', add_task_btn: 'जोडा', yield_history: 'उत्पन्नाचा इतिहास', yield_unit: 'क्विंटल प्रति एकर'},
+        bn: { home: 'হোম', crop_recommendation: 'শস্যের পরামর্শ', soil_weather: 'মাটি ও আবহাওয়া', disease_detection: 'রোগ সনাক্তকরণ', market_prices: 'বাজার দর', welcome_title: 'একটি উন্নত ভবিষ্যতের জন্য স্মার্ট কৃষি', welcome_subtitle: 'শস্য নির্বাচন, রোগ সনাক্তকরণ এবং বাজার দরের জন্য AI-চালিত অন্তর্দৃষ্টি পান। সবই আপনার স্থানীয় ভাষায়।', start_crop_suggestion: 'শস্যের পরামর্শ শুরু করুন', crop_recommendation_title: 'AI শস্যের সুপারিশ', soil_type: 'মাটির ধরন', location: 'অবস্থান', water_availability: 'জলের প্রাপ্যতা (বার্ষিক)', past_crops: 'পূর্ববর্তী ফসল', get_suggestion: 'পরামর্শ পান', farmer_dashboard: 'কৃষক ড্যাশবোর্ড', farmer_dashboard_title: 'কৃষক ড্যাশবোর্ড', my_farm_history: 'আমার খামারের ইতিহাস', farm_location: 'অবস্থান:', last_soil_test: 'শেষ মাটি পরীক্ষা:', previous_crop: 'পূর্ববর্তী ফসল:', next_crop_plan: 'পরবর্তী ফসল পরিকল্পনা:', farm_location_value: 'বেঙ্গালুরু, কর্ণাটক', last_soil_test_value: 'জুলাই ১৫, ২০২৫ (pH ৬.৮, N কম)', previous_crop_value: 'রাগি (খরিফ ২০২৪) - ভাল ফলন', next_crop_plan_value: 'টমেটো (রবি ২০২৫)', personalized_todo: 'ব্যক্তিগত করণীয় তালিকা', todo_prepare_beds: 'টমেটো রোপণের জন্য বেড প্রস্তুত করুন', todo_procure_fertilizer: 'নাইট্রোজেন সমৃদ্ধ সার সংগ্রহ করুন', todo_check_pump: 'সেচ পাম্প পরীক্ষা করুন', market_prices_title: 'লাইভ বাজার দর (এগমার্কনেট)', market_select_state: 'রাজ্য', market_select_district: 'জেলা', market_select_mandi: 'মন্ডি', market_search_btn: 'দাম অনুসন্ধান করুন', chatbot_title: 'ক্রপ সেন্স অ্যাসিস্ট্যান্ট', chatbot_welcome: 'আজ আমি আপনাকে কিভাবে সাহায্য করতে পারি?', chatbot_placeholder: 'একটি প্রশ্ন জিজ্ঞাসা করুন...', chatbot_send: 'পাঠান', profitability_outlook: 'লাভজনকতার আউটলুক (টমেটো)', est_revenue: 'আনুমানিক রাজস্ব', est_costs: 'আনুমানিক খরচ', net_profit: 'মোট লাভ', add_task_placeholder: 'নতুন কাজ যোগ করুন...', add_task_btn: 'যোগ করুন', yield_history: 'ফলনের ইতিহাস', yield_unit: 'কুইন্টাল প্রতি একর'},
+        pa: { home: 'ਘਰ', crop_recommendation: 'ਫਸਲ ਸੁਝਾਅ', soil_weather: 'ਮਿੱਟੀ ਅਤੇ ਮੌਸਮ', disease_detection: 'ਬਿਮਾਰੀ ਦੀ ਪਛਾਣ', market_prices: 'ਬਾਜ਼ਾਰ ਦੀਆਂ ਕੀਮਤਾਂ', welcome_title: 'ਇੱਕ ਬਿਹਤਰ ਭਵਿੱਖ ਲਈ ਸਮਾਰਟ ਖੇਤੀ', welcome_subtitle: 'ਫਸਲ ਦੀ ਚੋਣ, ਬਿਮਾਰੀ ਦੀ ਪਛਾਣ ਅਤੇ ਬਾਜ਼ਾਰ ਦੀਆਂ ਕੀਮਤਾਂ ਲਈ ਏਆਈ-ਸੰਚਾਲਿਤ ਜਾਣਕਾਰੀ ਪ੍ਰਾਪਤ ਕਰੋ। ਸਭ ਤੁਹਾਡੀ ਸਥਾਨਕ ਭਾਸ਼ਾ ਵਿੱਚ।', start_crop_suggestion: 'ਫਸਲ ਸੁਝਾਅ ਸ਼ੁਰੂ ਕਰੋ', crop_recommendation_title: 'ਏਆਈ ਫਸਲ ਸਿਫਾਰਸ਼', soil_type: 'ਮਿੱਟੀ ਦੀ ਕਿਸਮ', location: 'ਸਥਾਨ', water_availability: 'ਪਾਣੀ ਦੀ ਉਪਲਬਧਤਾ (ਸਾਲਾਨਾ)', past_crops: 'ਪਿਛਲੀਆਂ ਫਸਲਾਂ', get_suggestion: 'ਸੁਝਾਅ ਪ੍ਰਾਪਤ ਕਰੋ', farmer_dashboard: 'ਕਿਸਾਨ ਡੈਸ਼ਬੋਰਡ', farmer_dashboard_title: 'ਕਿਸਾਨ ਡੈਸ਼ਬੋਰਡ', my_farm_history: 'ਮੇਰੇ ਫਾਰਮ ਦਾ ਇਤਿਹਾਸ', farm_location: 'ਸਥਾਨ:', last_soil_test: 'ਆਖਰੀ ਮਿੱਟੀ ਦੀ ਜਾਂਚ:', previous_crop: 'ਪਿਛਲੀ ਫਸਲ:', next_crop_plan: 'ਅਗਲੀ ਫਸਲ ਯੋਜਨਾ:', farm_location_value: 'ਬੈਂਗਲੁਰੂ, ਕਰਨਾਟਕ', last_soil_test_value: 'ਜੁਲਾਈ 15, 2025 (ਪੀਐਚ 6.8, ਐਨ ਘੱਟ)', previous_crop_value: 'ਰਾਗੀ (ਖਰੀਫ 2024) - ਵਧੀਆ ਝਾੜ', next_crop_plan_value: 'ਟਮਾਟਰ (ਰੱਬੀ 2025)', personalized_todo: 'ਨਿੱਜੀ ਕਰਨ ਵਾਲੀ ਸੂਚੀ', todo_prepare_beds: 'ਟਮਾਟਰ ਲਗਾਉਣ ਲਈ ਬੈੱਡ ਤਿਆਰ ਕਰੋ', todo_procure_fertilizer: 'ਨਾਈਟ੍ਰੋਜਨ ਨਾਲ ਭਰਪੂਰ ਖਾਦ ਖਰੀਦੋ', todo_check_pump: 'ਸਿੰਚਾਈ ਪੰਪ ਦੀ ਜਾਂਚ ਕਰੋ', market_prices_title: 'ਲਾਈਵ ਬਾਜ਼ਾਰ ਕੀਮਤਾਂ (ਐਗਮਾਰਕਨੈੱਟ)', market_select_state: 'ਰਾਜ', market_select_district: 'ਜ਼ਿਲ੍ਹਾ', market_select_mandi: 'ਮੰਡੀ', market_search_btn: 'ਕੀਮਤਾਂ ਖੋਜੋ', chatbot_title: 'ਕ੍ਰੌਪ ਸੈਂਸ ਅਸਿਸਟੈਂਟ', chatbot_welcome: 'ਅੱਜ ਮੈਂ ਤੁਹਾਡੀ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ?', chatbot_placeholder: 'ਇੱਕ ਸਵਾਲ ਪੁੱਛੋ...', chatbot_send: 'ਭੇਜੋ', profitability_outlook: 'ਮੁਨਾਫਾ ਦ੍ਰਿਸ਼ (ਟਮਾਟਰ)', est_revenue: 'ਅਨੁਮਾਨਿਤ ਮਾਲੀਆ', est_costs: 'ਅਨੁਮਾਨਿਤ ਲਾਗਤਾਂ', net_profit: 'ਸ਼ੁੱਧ ਲਾਭ', add_task_placeholder: 'ਨਵਾਂ ਕੰਮ ਸ਼ਾਮਲ ਕਰੋ...', add_task_btn: 'ਸ਼ਾਮਲ ਕਰੋ', yield_history: 'ਝਾੜ ਦਾ ਇਤਿਹਾਸ', yield_unit: 'ਪ੍ਰਤੀ ਏਕੜ ਕੁਇੰਟਲ'},
+        gu: { home: 'ઘર', crop_recommendation: 'પાકની ભલામણ', soil_weather: 'જમીન અને હવામાન', disease_detection: 'રોગની ઓળખ', market_prices: 'બજાર ભાવ', welcome_title: 'એક સારા ભવિષ્ય માટે સ્માર્ટ ખેતી', welcome_subtitle: 'પાકની પસંદગી, રોગની ઓળખ અને બજાર ભાવ માટે AI-સંચાલિત આંતરદૃષ્ટિ મેળવો. બધું તમારી સ્થાનિક ભાષામાં.', start_crop_suggestion: 'પાકની ભલામણ શરૂ કરો', crop_recommendation_title: 'AI પાકની ભલામણ', soil_type: 'જમીનનો પ્રકાર', location: 'સ્થળ', water_availability: 'પાણીની ઉપલબ્ધતા (વાર્ષિક)', past_crops: 'ભૂતકાળના પાક', get_suggestion: 'ભલામણ મેળવો', farmer_dashboard: 'ખેડૂત ડેશબોર્ડ', farmer_dashboard_title: 'ખેડૂત ડેશબોર્ડ', my_farm_history: 'મારા ફાર્મનો ઇતિહાસ', farm_location: 'સ્થળ:', last_soil_test: 'છેલ્લી જમીન પરીક્ષણ:', previous_crop: 'અગાઉનો પાક:', next_crop_plan: 'આગામી પાક યોજના:', farm_location_value: 'બેંગલુરુ, કર્ણાટક', last_soil_test_value: 'જુલાઈ 15, 2025 (pH 6.8, N ઓછું)', previous_crop_value: 'રાગી (ખરીફ 2024) - સારું ઉત્પાદન', next_crop_plan_value: 'ટમેટા (રવિ 2025)', personalized_todo: 'વ્યક્તિગત કરવા માટેની સૂચિ', todo_prepare_beds: 'ટમેટાના વાવેતર માટે પથારી તૈયાર કરો', todo_procure_fertilizer: 'નાઇટ્રોજન સમૃદ્ધ ખાતર ખરીદો', todo_check_pump: 'સિંચાઈ પંપ તપાસો', market_prices_title: 'જીવંત બજાર ભાવો (એગમાર્કનેટ)', market_select_state: 'રાજ્ય', market_select_district: 'જિલ્લો', market_select_mandi: 'મંડી', market_search_btn: 'ભાવો શોધો', chatbot_title: 'ક્રોપ સેન્સ આસિસ્ટન્ટ', chatbot_welcome: 'આજે હું તમને કેવી રીતે મદદ કરી શકું?', chatbot_placeholder: 'એક પ્રશ્ન પૂછો...', chatbot_send: 'મોકલો', profitability_outlook: 'નફાકારકતાનું દૃશ્ય (ટમેટા)', est_revenue: 'અંદાજિત આવક', est_costs: 'અંદાજિત ખર્ચ', net_profit: 'ચોખ્ખો નફો', add_task_placeholder: 'નવું કાર્ય ઉમેરો...', add_task_btn: 'ઉમેરો', yield_history: 'ઉત્પાદનનો ઇતિહાસ', yield_unit: 'પ્રતિ એકર ક્વિન્ટલ'},
+        ml: { home: 'ഹോം', crop_recommendation: 'വിള നിർദ്ദേശം', soil_weather: 'മണ്ണും കാലാവസ്ഥയും', disease_detection: 'രോഗനിർണയം', market_prices: 'വിപണി വില', welcome_title: 'മെച്ചപ്പെട്ട ഭാവിക്കായി സ്മാർട്ട് ഫാമിംഗ്', welcome_subtitle: 'വിള തിരഞ്ഞെടുക്കൽ, രോഗനിർണയം, വിപണി വിലകൾ എന്നിവയ്ക്കായി AI-പവർ ചെയ്യുന്ന ഉൾക്കാഴ്ചകൾ നേടുക. എല്ലാം നിങ്ങളുടെ പ്രാദേശിക ഭാഷയിൽ.', start_crop_suggestion: 'വിള നിർദ്ദേശം ആരംഭിക്കുക', crop_recommendation_title: 'AI വിള ശുപാർശ', soil_type: 'മണ്ണിന്റെ തരം', location: 'സ്ഥലം', water_availability: 'ജലലഭ്യത (വാർഷികം)', past_crops: 'മുൻ വിളകൾ', get_suggestion: 'നിർദ്ദേശം നേടുക', farmer_dashboard: 'കർഷക ഡാഷ്‌ബോർഡ്', farmer_dashboard_title: 'കർഷക ഡാഷ്‌ബോർഡ്', my_farm_history: 'എന്റെ ഫാമിന്റെ ചരിത്രം', farm_location: 'സ്ഥലം:', last_soil_test: 'അവസാനത്തെ മണ്ണ് പരിശോധന:', previous_crop: 'മുമ്പത്തെ വിള:', next_crop_plan: 'അടുത്ത വിള പദ്ധതി:', farm_location_value: 'ബെംഗളൂരു, കർണാടക', last_soil_test_value: 'ജൂലൈ 15, 2025 (pH 6.8, N കുറവ്)', previous_crop_value: 'റാഗി (ഖാരിഫ് 2024) - നല്ല വിളവ്', next_crop_plan_value: 'തക്കാളി (റബി 2025)', personalized_todo: 'വ്യക്തിഗതമാക്കിയ ചെയ്യേണ്ടവയുടെ ലിസ്റ്റ്', todo_prepare_beds: 'തക്കാളി നടുന്നതിനായി തടങ്ങൾ തയ്യാറാക്കുക', todo_procure_fertilizer: 'നൈട്രജൻ അടങ്ങിയ വളം വാങ്ങുക', todo_check_pump: 'ജലസേചന പമ്പ് പരിശോധിക്കുക', market_prices_title: 'തത്സമയ വിപണി വിലകൾ (അഗ്മാർക്ക്നെറ്റ്)', market_select_state: 'സംസ്ഥാനം', market_select_district: 'ജില്ല', market_select_mandi: 'മണ്ഡി', market_search_btn: 'വിലകൾ തിരയുക', chatbot_title: 'ക്രോപ്പ് സെൻസ് അസിസ്റ്റന്റ്', chatbot_welcome: 'ഇന്ന് ഞാൻ നിങ്ങളെ എങ്ങനെ സഹായിക്കും?', chatbot_placeholder: 'ഒരു ചോദ്യം ചോദിക്കൂ...', chatbot_send: 'അയയ്ക്കുക', profitability_outlook: 'ലാഭക്ഷമത കാഴ്ചപ്പാട് (തക്കാളി)', est_revenue: 'കണക്കാക്കിയ വരുമാനം', est_costs: 'കണക്കാക്കിയ ചെലവുകൾ', net_profit: 'അറ്റാദായം', add_task_placeholder: 'പുതിയ ടാസ്ക് ചേർക്കുക...', add_task_btn: 'ചേർക്കുക', yield_history: 'വിളവ് ചരിത്രം', yield_unit: 'ഏക്കറിന് ക്വിന്റൽ'},
+        or: { home: 'ମୂଳପୃଷ୍ଠା', crop_recommendation: 'ଫସଲ ପରାମର୍ଶ', soil_weather: 'ମୃତ୍ତିକା ଏବଂ ପାଣିପାଗ', disease_detection: 'ରୋଗ ଚିହ୍ନଟ', market_prices: 'ବଜାର ମୂଲ୍ୟ', welcome_title: 'ଏକ ଉତ୍ତମ ଭବିଷ୍ୟତ ପାଇଁ ସ୍ମାର୍ଟ ଚାଷ', welcome_subtitle: 'ଫସଲ ଚୟନ, ରୋଗ ଚିହ୍ନଟ ଏବଂ ବଜାର ମୂଲ୍ୟ ପାଇଁ AI-ଚାଳିତ ଅନ୍ତର୍ଦୃଷ୍ଟି ପାଆନ୍ତୁ। ସବୁକିଛି ଆପଣଙ୍କ ସ୍ଥାନୀୟ ଭାଷାରେ।', start_crop_suggestion: 'ଫସଲ ପରାମର୍ଶ ଆରମ୍ଭ କରନ୍ତୁ', crop_recommendation_title: 'AI ଫସଲ ସୁପାରିଶ', soil_type: 'ମୃତ୍ତିକାର ପ୍ରକାର', location: 'ସ୍ଥାନ', water_availability: 'ଜଳର ଉପଲବ୍ଧତା (ବାର୍ଷିକ)', past_crops: 'ପୂର୍ବ ଫସଲ', get_suggestion: 'ପରାମର୍ଶ ପାଆନ୍ତୁ', farmer_dashboard: 'କୃଷକ ଡ୍ୟାସବୋର୍ଡ', farmer_dashboard_title: 'କୃଷକ ଡ୍ୟାସବୋର୍ଡ', my_farm_history: 'ମୋର ଫାର୍ମ ଇତିହାସ', farm_location: 'ସ୍ଥାନ:', last_soil_test: 'ଶେଷ ମୃତ୍ତିକା ପରୀକ୍ଷା:', previous_crop: 'ପୂର୍ବ ଫସଲ:', next_crop_plan: 'ପରବର୍ତ୍ତୀ ଫସଲ ଯୋਜନା:', farm_location_value: 'ବେଙ୍ଗାଲୁରୁ, କର୍ଣ୍ଣାଟକ', last_soil_test_value: 'ଜୁଲାଇ 15, 2025 (pH 6.8, N କମ୍)', previous_crop_value: 'ରାଗି (ଖରିଫ ୨୦୨୪) - ଭଲ ଉତ୍ପାଦନ', next_crop_plan_value: 'ଟମାଟୋ (ରବି ୨୦୨୫)', personalized_todo: 'ବ୍ୟକ୍ତିଗତ କାର୍ଯ୍ୟ ତାଲିକା', todo_prepare_beds: 'ଟମାଟୋ ଚାଷ ପାଇଁ ବେଡ୍ ପ୍ରସ୍ତୁତ କରନ୍ତୁ', todo_procure_fertilizer: 'ନାଇଟ୍ରୋଜେନ୍-ଯୁକ୍ତ ସାର କିଣନ୍ତୁ', todo_check_pump: 'ଜଳସେଚନ ପମ୍ପ ଯାଞ୍ଚ କରନ୍ତୁ', market_prices_title: 'ଲାଇଭ୍ ବଜାର ମୂଲ୍ୟ (ଏଗਮਾਰ୍କନେଟ୍)', market_select_state: 'ରାଜ୍ୟ', market_select_district: 'ଜିଲ୍ଲା', market_select_mandi: 'ମଣ୍ଡି', market_search_btn: 'ମୂଲ୍ୟ ଖୋଜନ୍ତୁ', chatbot_title: 'କ୍ରପ୍ ସେନ୍ସ ସହାୟକ', chatbot_welcome: 'ଆଜି ମୁଁ ଆପଣଙ୍କୁ କିପରି ସାହାଯ୍ୟ କରିପାରିବି?', chatbot_placeholder: 'ଏକ ପ୍ରଶ୍ନ ପଚାରନ୍ତୁ...', chatbot_send: 'ପଠାନ୍ତୁ', chatbot_responses: ["ଏହା ଏକ ଭଲ ପ୍ରଶ୍ନ! ଏକ ଡେମୋ ସହାୟକ ଭାବରେ, ମୁଁ ଏହି ନମୁନା ପ୍ରତିକ୍ରିୟା ପ୍ରଦାନ କରିପାରିବି।", "ମୋର ଡେମୋ ଡାଟା ଆଧାରରେ, ଏଠାରେ ଏକ ନମୁନା ଉତ୍ତର ଅଛି।", "ଚିନ୍ତା କରୁଛି... ମୁଁ ଏକ ଡେମୋ ସହାୟକ, କିନ୍ତୁ ମୁଁ ଆପଣଙ୍କୁ କିପରି ସାହାଯ୍ୟ କରିପାରିବି ତାହାର ଏହା ଏକ ଉଦାହରଣ।"], profitability_outlook: 'ଲାଭଦାୟକତା ଦୃଶ୍ୟ (ଟମାଟୋ)', est_revenue: 'ଆନୁମାନିକ ରାଜସ୍ୱ', est_costs: 'ଆନୁମାନିକ ଖର୍ଚ୍ଚ', net_profit: 'ଶୁଦ୍ଧ ଲାଭ', add_task_placeholder: 'ନୂଆ କାର୍ଯ୍ୟ ଯୋଗ କରନ୍ତୁ...', add_task_btn: 'ଯୋଗ କରନ୍ତୁ', yield_history: 'ଉତ୍ପାଦନ ଇତିହାସ', yield_unit: 'ଏକର ପ୍ରତି କ୍ୱିଣ୍ଟାଲ'},
+        as: { home: 'मुख्य पृष्ठ', crop_recommendation: 'শস্যৰ পৰামৰ্শ', soil_weather: 'মাটি আৰু বতৰ', disease_detection: 'ৰোগ চিনাক্তকৰণ', market_prices: 'বজাৰৰ মূল্য', welcome_title: 'এক উন্নত ভৱিষ্যতৰ বাবে স্মাৰ্ট কৃষি', welcome_subtitle: 'শস্য নিৰ্বাচন, ৰোগ চিনাক্তকৰণ আৰু বজাৰ মূল্যৰ বাবে AI-চালিত তথ্য লাভ কৰক। সকলো আপোনাৰ স্থানীয় ভাষাত।', start_crop_suggestion: 'শস্যৰ পৰামৰ্শ আৰম্ভ কৰক', crop_recommendation_title: 'AI শস্যৰ চুপাৰিছ', soil_type: 'মাটিৰ প্ৰকাৰ', location: 'অৱস্থান', water_availability: 'পানীৰ উপলব্ধতা (বাৰ্ষিক)', past_crops: 'পূৰ্বৰ শস্য', get_suggestion: 'পৰামৰ্শ লাভ কৰক', farmer_dashboard: 'কৃষকৰ ডেশ্ববৰ্ড', farmer_dashboard_title: 'কৃষকৰ ডেশ্ববৰ্ড', my_farm_history: 'মোৰ ফাৰ্মৰ ইতিহাস', farm_location: 'অৱস্থান:', last_soil_test: 'শেষ মাটি পৰীক্ষা:', previous_crop: 'পূৰ্বৰ শস্য:', next_crop_plan: 'পৰৱৰ্তী শস্য পৰিকল্পনা:', farm_location_value: 'বেংগালুৰু, কৰ্ণাটক', last_soil_test_value: 'জুলাই ১৫, ২০২৫ (পিএইচ ৬.৮, এন কম)', previous_crop_value: 'ৰাগি (খৰিফ ২০২৪) - ভাল উৎপাদন', next_crop_plan_value: 'বিলাহী (ৰবি ২০২৫)', personalized_todo: 'ব্যক্তিগত কৰিবলগীয়া তালিকা', todo_prepare_beds: ' বিলাহী খেতিৰ বাবে বিচনা প্ৰস্তুত কৰক', todo_procure_fertilizer: 'নাইট্ৰ’জেন সমৃদ্ধ সাৰ ক্ৰয় কৰক', todo_check_pump: 'জলসিঞ্চন پাম্প পৰীক্ষা কৰক', market_prices_title: 'লাইভ বজাৰ মূল্য (এগমার্কনেট)', market_select_state: 'ৰাজ্য', market_select_district: 'জিলা', market_select_mandi: 'মandi', market_search_btn: 'মূল্য অনুসন্ধান কৰক', chatbot_title: 'ক্ৰপ চেঞ্চ সহায়ক', chatbot_welcome: 'আজি মই আপোনাক কেনেকৈ সহায় কৰিব পাৰোঁ?', chatbot_placeholder: 'এটা প্ৰশ্ন সোধক...', chatbot_send: 'প্ৰেৰণ কৰক', chatbot_responses: ["এইটো এটা ভাল প্ৰশ্ন! ডেমো সহায়ক হিচাপে, মই এই নমুনা সঁহাৰি দিব পাৰোঁ।", "মোৰ ডেমო ডেটাৰ ওপৰত ভিত্তি কৰি, এইটো এটা নমুনা উত্তৰ।", "চিন্তা কৰি আছোঁ... মই এজন ডেমო সহায়ক, কিন্তু মই আপোনাক কেনেকৈ সহায় কৰিব পাৰোঁ তাৰ ই এটা উদাহৰণ।"], profitability_outlook: 'লাভজনকতাৰ দৃশ্য (বিলাহী)', est_revenue: 'আনুমানিক ৰাজহ', est_costs: 'আনুমানিক খৰচ', net_profit: 'সৰ্বমুঠ লাভ', add_task_placeholder: 'নতুন কাৰ্য যোগ কৰক...', add_task_btn: 'যোগ কৰক', yield_history: 'উৎপাদনৰ ইতিহাস', yield_unit: 'প্ৰতি একৰত কুইণ্টল'},
+        bho: { home: 'घर', crop_recommendation: 'फसल सुझाव', soil_weather: 'माटी आउर मौसम', disease_detection: 'रोग के पहचान', market_prices: 'बाजार के भाव', welcome_title: 'बढ़िया भविष्य बदे स्मार्ट खेती', welcome_subtitle: 'फसल चुने, रोग के पता लगावे आउर बाजार के भाव खातिर AI से जानकारी पाईं। सब रउआ स्थानीय भाषा में।', start_crop_suggestion: 'फसल सुझाव सुरू करीं', crop_recommendation_title: 'AI फसल सिफारिस', soil_type: 'माटी के प्रकार', location: 'जगह', water_availability: 'पानी के उपलब्धता (सालाना)', past_crops: 'पछिला फसल', get_suggestion: 'सुझाव पाईं', farmer_dashboard: 'किसान डैशबोर्ड', farmer_dashboard_title: 'किसान डैशबोर्ड', my_farm_history: 'हमार खेत के इतिहास', farm_location: 'जगह:', last_soil_test: 'आखिरी माटी जांच:', previous_crop: 'पछिला फसल:', next_crop_plan: 'अगिला फसल के योजना:', farm_location_value: 'बेंगलुरु, कर्नाटक', last_soil_test_value: 'जुलाई 15, 2025 (पीएच 6.8, एन कम)', previous_crop_value: 'मड़ुआ (खरीफ 2024) - बढ़िया उपज', next_crop_plan_value: 'टमाटर (रबी 2025)', personalized_todo: 'व्यक्तिगत करे वाला सूची', todo_prepare_beds: 'टमाटर रोपे खातिर क्यारी तइयार करीं', todo_procure_fertilizer: 'नाइट्रोजन वाला खाद खरीदीं', todo_check_pump: 'सिंचाई पंप के जांच करीं', market_prices_title: 'लाइव बाजार भाव (एगमार्कनेट)', market_select_state: 'राज', market_select_district: 'जिला', market_select_mandi: 'मंडी', market_search_btn: 'भाव खोजीं', chatbot_title: 'क्रॉप सेंस सहायक', chatbot_welcome: 'आज हम रउआ के कइसे मदद कर सकीं?', chatbot_placeholder: 'सवाल पूछीं...', chatbot_send: 'भेजीं', profitability_outlook: 'मुनाफा के संभावना (टमाटर)', est_revenue: 'अनुमानित कमाई', est_costs: 'अनुमानित लागत', net_profit: 'कुल मुनाफा', add_task_placeholder: 'नया काम जोड़ीं...', add_task_btn: 'जोड़ीं', yield_history: 'उपज के इतिहास', yield_unit: 'क्विंटल प्रति एकड़'},
+        sck: { home: 'घर', crop_recommendation: 'फसल सुझाव', soil_weather: 'माटी और मौसम', disease_detection: 'रोग पहिचान', market_prices: 'बाजार दाम', welcome_title: 'बढ़िया भविष्य ले स्मार्ट खेती', welcome_subtitle: 'फसल चुनेक, रोग पहिचान और बाजार दाम ले AI से जानकारी लेवा। सब तोहर स्थानीय भाषा में।', start_crop_suggestion: 'फसल सुझाव सुरु करा', crop_recommendation_title: 'AI फसल सिफारिस', soil_type: 'माटी के किसिम', location: 'जगह', water_availability: 'पानी के उपलब्धता (सालाना)', past_crops: 'पछिला फसल', get_suggestion: 'सुझाव लेवा', farmer_dashboard: 'किसान डैशबोर्ड', farmer_dashboard_title: 'किसान डैशबोर्ड', my_farm_history: 'हमर खेत के इतिहास', farm_location: 'जगह:', last_soil_test: 'आखिरी माटी जांच:', previous_crop: 'पछिला फसल:', next_crop_plan: 'अगला फसल योजना:', farm_location_value: 'बेंगलुरु, कर्नाटक', last_soil_test_value: 'जुलाई 15, 2025 (pH 6.8, N कम)', previous_crop_value: 'मड़ुआ (खरीफ 2024) - बढ़िया उपज', next_crop_plan_value: 'टमाटर (रबी 2025)', personalized_todo: 'व्यक्तिगत करेक सूची', todo_prepare_beds: 'टमाटर रोपे ले क्यारी बनावा', todo_procure_fertilizer: 'नाइट्रोजन वाला खाद कीना', todo_check_pump: 'सिंचाई पंप जांच करा', market_prices_title: 'लाइव बाजार दाम (एगमार्कनेट)', market_select_state: 'राज', market_select_district: 'जिला', market_select_mandi: 'मंडी', market_search_btn: 'दाम खोजा', chatbot_title: 'क्रॉप सेंस सहायक', chatbot_welcome: 'आज हम तोहर का मदद कईर सकीला?', chatbot_placeholder: 'सवाल पूछा...', chatbot_send: 'भेजा', profitability_outlook: 'मुनाफा के संभावना (टमाटर)', est_revenue: 'अनुमानित कमाई', est_costs: 'अनुमानित लागत', net_profit: 'कुल मुनाफा', add_task_placeholder: 'नवा काम जोड़ा...', add_task_btn: 'जोड़ा', yield_history: 'उपज के इतिहास', yield_unit: 'क्विंटल प्रति एकड़'}
+    };
+
+    // --- Mock Market Data (Expanded) ---
+    const marketData = {
+        "Karnataka": {
+            "Bengaluru Urban": {
+                "Yeshwanthpura": [
+                    { mandi: "Yeshwanthpura", crop: "Tomato", price: 2550, trend: 5 },
+                    { mandi: "Yeshwanthpura", crop: "Onion", price: 1800, trend: -2 },
+                    { mandi: "Yeshwanthpura", crop: "Potato", price: 1500, trend: 3 },
+                ],
+                "K.R. Market": [
+                     { mandi: "K.R. Market", crop: "Tomato", price: 2400, trend: 2 },
+                     { mandi: "K.R. Market", crop: "Beans", price: 3500, trend: 8 },
+                ]
+            },
+            "Kolar": {
+                "Kolar APMC": [
+                     { mandi: "Kolar APMC", crop: "Tomato", price: 2350, trend: 1 },
+                     { mandi: "Kolar APMC", crop: "Ragi", price: 2800, trend: 0 },
+                ]
+            }
+        },
+        "Maharashtra": {
+            "Pune": {
+                "Pune Market Yard": [
+                    { mandi: "Pune Market Yard", crop: "Onion", price: 1600, trend: -5 },
+                    { mandi: "Pune Market Yard", crop: "Sugarcane", price: 3100, trend: 2 },
+                ]
+            },
+            "Nashik": {
+                "Lasalgaon": [
+                    { mandi: "Lasalgaon", crop: "Onion", price: 1550, trend: -7 },
+                    { mandi: "Lasalgaon", crop: "Grapes", price: 5500, trend: 10 },
+                ]
+            }
+        },
+        "Uttar Pradesh": {
+            "Lucknow": {
+                "Lucknow Mandi": [
+                    { mandi: "Lucknow Mandi", crop: "Wheat", price: 2050, trend: 2 },
+                    { mandi: "Lucknow Mandi", crop: "Paddy", price: 1850, trend: 1 },
+                    { mandi: "Lucknow Mandi", crop: "Potato", price: 1100, trend: -3 },
+                ]
+            },
+            "Varanasi": {
+                "Varanasi Mandi": [
+                    { mandi: "Varanasi Mandi", crop: "Paddy", price: 1870, trend: 3 },
+                    { mandi: "Varanasi Mandi", crop: "Mustard", price: 5200, trend: 5 },
+                    { mandi: "Varanasi Mandi", crop: "Lentil", price: 6300, trend: -1 },
+                ]
+            }
+        },
+        "Punjab": {
+            "Ludhiana": {
+                "Ludhiana Mandi": [
+                    { mandi: "Ludhiana Mandi", crop: "Wheat", price: 2100, trend: 1 },
+                    { mandi: "Ludhiana Mandi", crop: "Rice", price: 3500, trend: 4 },
+                    { mandi: "Ludhiana Mandi", crop: "Maize", price: 1700, trend: -2 },
+                ]
+            },
+            "Amritsar": {
+                "Amritsar Mandi": [
+                    { mandi: "Amritsar Mandi", crop: "Wheat", price: 2080, trend: 0 },
+                    { mandi: "Amritsar Mandi", crop: "Basmati Rice", price: 6500, trend: 6 },
+                    { mandi: "Amritsar Mandi", crop: "Cotton", price: 7200, trend: 3 },
+                ]
+            }
+        },
+        "Bihar": {
+            "Patna": {
+                "Patna Mandi": [
+                    { mandi: "Patna Mandi", crop: "Maize", price: 1750, trend: 4 },
+                    { mandi: "Patna Mandi", crop: "Paddy", price: 1800, trend: -1 },
+                    { mandi: "Patna Mandi", crop: "Wheat", price: 2000, trend: 2 },
+                ]
+            },
+            "Muzaffarpur": {
+                "Muzaffarpur Mandi": [
+                    { mandi: "Muzaffarpur Mandi", crop: "Litchi", price: 8000, trend: 10 },
+                    { mandi: "Muzaffarpur Mandi", crop: "Maize", price: 1720, trend: 3 },
+                    { mandi: "Muzaffarpur Mandi", crop: "Rice", price: 3300, trend: 1 },
+                ]
+            }
+        },
+        "West Bengal": {
+            "Kolkata": {
+                "Sealdah Market": [
+                    { mandi: "Sealdah Market", crop: "Potato", price: 1200, trend: -4 },
+                    { mandi: "Sealdah Market", crop: "Jute", price: 6800, trend: 5 },
+                    { mandi: "Sealdah Market", crop: "Rice", price: 3400, trend: 2 },
+                ]
+            },
+            "Siliguri": {
+                "Siliguri Mandi": [
+                    { mandi: "Siliguri Mandi", crop: "Tea", price: 15000, trend: 7 },
+                    { mandi: "Siliguri Mandi", crop: "Pineapple", price: 2500, trend: 3 },
+                    { mandi: "Siliguri Mandi", crop: "Paddy", price: 1780, trend: -1 },
+                ]
+            }
+        }
+    };
+    
+    // --- Mock Data for Autocomplete ---
+    const mockLocations = [
+        // Andaman and Nicobar Islands
+        'Port Blair, Andaman and Nicobar Islands', 'Havelock Island, Andaman and Nicobar Islands',
+        // Andhra Pradesh
+        'Visakhapatnam, Andhra Pradesh', 'Vijayawada, Andhra Pradesh', 'Guntur, Andhra Pradesh', 'Nellore, Andhra Pradesh', 'Kurnool, Andhra Pradesh', 'Tirupati, Andhra Pradesh', 'Rajahmundry, Andhra Pradesh', 'Anantapur, Andhra Pradesh',
+        // Arunachal Pradesh
+        'Itanagar, Arunachal Pradesh', 'Tawang, Arunachal Pradesh', 'Ziro, Arunachal Pradesh', 'Kibithu, Arunachal Pradesh',
+        // Assam
+        'Guwahati, Assam', 'Dibrugarh, Assam', 'Silchar, Assam', 'Jorhat, Assam', 'Tezpur, Assam',
+        // Bihar
+        'Patna, Bihar', 'Gaya, Bihar', 'Bhagalpur, Bihar', 'Muzaffarpur, Bihar', 'Purnia, Bihar', 'Darbhanga, Bihar',
+        // Chandigarh
+        'Chandigarh, Chandigarh',
+        // Chhattisgarh
+        'Raipur, Chhattisgarh', 'Bhilai, Chhattisgarh', 'Bilaspur, Chhattisgarh', 'Korba, Chhattisgarh', 'Durg, Chhattisgarh',
+        // Dadra and Nagar Haveli and Daman and Diu
+        'Daman, Daman and Diu', 'Diu, Daman and Diu', 'Silvassa, Dadra and Nagar Haveli',
+        // Delhi
+        'New Delhi, Delhi', 'Delhi, Delhi',
+        // Goa
+        'Panaji, Goa', 'Margao, Goa', 'Vasco da Gama, Goa', 'Mapusa, Goa',
+        // Gujarat
+        'Ahmedabad, Gujarat', 'Surat, Gujarat', 'Vadodara, Gujarat', 'Rajkot, Gujarat', 'Bhavnagar, Gujarat', 'Jamnagar, Gujarat', 'Gandhinagar, Gujarat',
+        // Haryana
+        'Faridabad, Haryana', 'Gurugram, Haryana', 'Panipat, Haryana', 'Ambala, Haryana', 'Hisar, Haryana', 'Rohtak, Haryana',
+        // Himachal Pradesh
+        'Shimla, Himachal Pradesh', 'Manali, Himachal Pradesh', 'Dharamshala, Himachal Pradesh', 'Kullu, Himachal Pradesh', 'Mandi, Himachal Pradesh',
+        // Jammu and Kashmir
+        'Srinagar, Jammu and Kashmir', 'Jammu, Jammu and Kashmir', 'Anantnag, Jammu and Kashmir', 'Baramulla, Jammu and Kashmir',
+        // Jharkhand (as requested)
+        'Ranchi, Jharkhand', 'Jamshedpur, Jharkhand', 'Dhanbad, Jharkhand', 'Bokaro Steel City, Jharkhand', 'Deoghar, Jharkhand', 'Hazaribagh, Jharkhand', 'Giridih, Jharkhand', 'Ramgarh, Jharkhand', 'Medininagar, Jharkhand', 'Chirkunda, Jharkhand', 'Dumka, Jharkhand',
+        // Karnataka
+        'Bengaluru, Karnataka', 'Mysuru, Karnataka', 'Mangaluru, Karnataka', 'Hubballi-Dharwad, Karnataka', 'Belagavi, Karnataka', 'Ballari, Karnataka',
+        // Kerala
+        'Thiruvananthapuram, Kerala', 'Kochi, Kerala', 'Kozhikode, Kerala', 'Thrissur, Kerala', 'Kollam, Kerala', 'Alappuzha, Kerala',
+        // Ladakh
+        'Leh, Ladakh', 'Kargil, Ladakh',
+        // Lakshadweep
+        'Kavaratti, Lakshadweep', 'Agatti, Lakshadweep',
+        // Madhya Pradesh
+        'Indore, Madhya Pradesh', 'Bhopal, Madhya Pradesh', 'Jabalpur, Madhya Pradesh', 'Gwalior, Madhya Pradesh', 'Ujjain, Madhya Pradesh',
+        // Maharashtra
+        'Mumbai, Maharashtra', 'Pune, Maharashtra', 'Nagpur, Maharashtra', 'Nashik, Maharashtra', 'Aurangabad, Maharashtra', 'Thane, Maharashtra',
+        // Manipur
+        'Imphal, Manipur', 'Churachandpur, Manipur',
+        // Meghalaya
+        'Shillong, Meghalaya', 'Cherrapunji, Meghalaya',
+        // Mizoram
+        'Aizawl, Mizoram', 'Lunglei, Mizoram',
+        // Nagaland
+        'Kohima, Nagaland', 'Dimapur, Nagaland',
+        // Odisha
+        'Bhubaneswar, Odisha', 'Cuttack, Odisha', 'Rourkela, Odisha', 'Puri, Odisha', 'Sambalpur, Odisha',
+        // Puducherry
+        'Puducherry, Puducherry', 'Karaikal, Puducherry',
+        // Punjab
+        'Ludhiana, Punjab', 'Amritsar, Punjab', 'Jalandhar, Punjab', 'Patiala, Punjab', 'Bathinda, Punjab',
+        // Rajasthan
+        'Jaipur, Rajasthan', 'Jodhpur, Rajasthan', 'Udaipur, Rajasthan', 'Kota, Rajasthan', 'Bikaner, Rajasthan', 'Ajmer, Rajasthan',
+        // Sikkim
+        'Gangtok, Sikkim', 'Pelling, Sikkim',
+        // Tamil Nadu
+        'Chennai, Tamil Nadu', 'Coimbatore, Tamil Nadu', 'Madurai, Tamil Nadu', 'Tiruchirappalli, Tamil Nadu', 'Salem, Tamil Nadu', 'Kanyakumari, Tamil Nadu',
+        // Telangana
+        'Hyderabad, Telangana', 'Warangal, Telangana', 'Nizamabad, Telangana', 'Karimnagar, Telangana', 'Ramagundam, Telangana',
+        // Tripura
+        'Agartala, Tripura', 'Udaipur, Tripura',
+        // Uttar Pradesh
+        'Lucknow, Uttar Pradesh', 'Kanpur, Uttar Pradesh', 'Varanasi, Uttar Pradesh', 'Agra, Uttar Pradesh', 'Meerut, Uttar Pradesh', 'Prayagraj, Uttar Pradesh', 'Ghaziabad, Uttar Pradesh',
+        // Uttarakhand
+        'Dehradun, Uttarakhand', 'Haridwar, Uttarakhand', 'Rishikesh, Uttarakhand', 'Nainital, Uttarakhand',
+        // West Bengal
+        'Kolkata, West Bengal', 'Asansol, West Bengal', 'Siliguri, West Bengal', 'Durgapur, West Bengal', 'Darjeeling, West Bengal'
+    ];
+
+    const mockCrops = [
+        'Rice', 'Wheat', 'Maize', 'Ragi', 'Jowar', 'Bajra',
+        'Tomato', 'Potato', 'Onion', 'Brinjal', 'Chilli',
+        'Cotton', 'Sugarcane', 'Soybean', 'Groundnut', 'Mustard'
+    ];
+
+    let priceChart;
+    let yieldChart;
+
+    function createOrUpdatePriceChart(mandiName, cropData) {
+        if (priceChart) priceChart.destroy();
+        if (!priceChartCanvas) return;
+
+        const labels = Array.from({length: 7}, (_, i) => `Day ${i + 1}`);
+        const prices = cropData.length > 0 ? cropData[0].historical : [];
+        const cropName = cropData.length > 0 ? cropData[0].crop : 'Prices';
+
+        const ctx = priceChartCanvas.getContext('2d');
+        priceChart = new Chart(ctx, {
+            type: 'line', 
+            data: { 
+                labels: labels, 
+                datasets: [{ 
+                    label: `Price of ${cropName} in ₹`, 
+                    data: prices, 
+                    borderColor: 'rgb(52, 211, 153)', 
+                    backgroundColor: 'rgba(52, 211, 153, 0.1)', 
+                    tension: 0.3, 
+                    fill: true, 
+                }] 
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { legend: { labels: { color: '#cbd5e1' } } }, 
+                scales: { 
+                    y: { beginAtZero: false, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(71, 85, 105, 0.5)' } }, 
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(71, 85, 105, 0.5)' } } 
+                } 
+            }
+        });
+        const lang = languageSelector.value || 'en';
+        const translationSet = translations[lang] || translations.en;
+        marketChartTitleElement.textContent = `${translationSet.market_chart_title_default}: ${cropName} in ${mandiName}`;
+    }
+
+    function createOrUpdateYieldChart() {
+        if (yieldChart) yieldChart.destroy();
+        if (!yieldChartCanvas) return;
+        const lang = languageSelector.value || 'en';
+        const translationSet = translations[lang] || translations.en;
+        
+        const ctx = yieldChartCanvas.getContext('2d');
+        yieldChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Ragi (2024)', 'Wheat (2023)', 'Maize (2022)'],
+                datasets: [{
+                    label: translationSet.yield_unit,
+                    data: [18, 22, 20],
+                    backgroundColor: [
+                        'rgba(52, 211, 153, 0.6)',
+                        'rgba(59, 130, 246, 0.6)',
+                        'rgba(234, 179, 8, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(52, 211, 153, 1)',
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(234, 179, 8, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        ticks: { color: '#94a3b8' }, 
+                        grid: { color: 'rgba(71, 85, 105, 0.5)' },
+                        title: { display: true, text: translationSet.yield_unit, color: '#cbd5e1'}
+                    },
+                    x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    function applyTranslations(lang) {
+        const translationSet = translations[lang] || translations.en;
+        document.querySelectorAll('[data-translate]').forEach(el => {
+            const key = el.dataset.translate;
+            if (translationSet[key]) {
+                el.innerHTML = translationSet[key];
+            }
+        });
+        document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+            const key = el.dataset.translatePlaceholder;
+            if (translationSet[key]) {
+                el.placeholder = translationSet[key];
+            }
+        });
+        
+        // Re-render charts with new language labels if they exist
+        if (document.getElementById('page-dashboard').classList.contains('active')) {
+             createOrUpdateYieldChart();
+        }
+    }
+
+    function showPage(pageId) {
+        pages.forEach(page => page.classList.remove('active'));
+        const newPage = document.getElementById(`page-${pageId}`);
+        if (newPage) newPage.classList.add('active');
+        navButtons.forEach(btn => {
+            if (btn.dataset.page === pageId) {
+                btn.classList.add('font-semibold', 'text-emerald-400', 'border-b-2', 'border-emerald-400');
+                btn.classList.remove('text-slate-400');
+            } else {
+                btn.classList.remove('font-semibold', 'text-emerald-400', 'border-b-2', 'border-emerald-400');
+                btn.classList.add('text-slate-400');
+            }
+        });
+        dashboardButton.classList.toggle('bg-emerald-600', pageId === 'dashboard');
+        
+        if (pageId === 'dashboard') {
+            createOrUpdateYieldChart();
+        } else if (pageId === 'market' && !priceChart) {
+           updateMarketTable([]);
+           createOrUpdatePriceChart("Select Mandi", []);
+           marketChartTitleElement.textContent = translations[languageSelector.value].market_chart_title_default;
+        }
+        window.scrollTo(0, 0);
+    }
+
+    // --- To-Do List Logic ---
+    let initialTasks = [
+        { text: 'todo_prepare_beds', done: false },
+        { text: 'todo_procure_fertilizer', done: false },
+        { text: 'todo_check_pump', done: true }
+    ];
+
+    function renderTodoList() {
+        todoList.innerHTML = '';
+        const lang = languageSelector.value || 'en';
+        const translationSet = translations[lang] || translations.en;
+
+        initialTasks.forEach((task, index) => {
+            const li = document.createElement('li');
+            li.classList.add('flex', 'items-center');
+            const translatedText = translationSet[task.text] || task.text;
+
+            li.innerHTML = `
+                <input type="checkbox" data-index="${index}" class="h-4 w-4 rounded bg-slate-700 border-slate-600 text-emerald-500 focus:ring-emerald-600 focus:ring-2" ${task.done ? 'checked' : ''}>
+                <span class="ml-3 ${task.done ? 'line-through text-slate-500' : ''}">${translatedText}</span>
+            `;
+            todoList.appendChild(li);
+        });
+    }
+
+    addTaskBtn.addEventListener('click', () => {
+        const taskText = newTaskInput.value.trim();
+        if (taskText) {
+            initialTasks.push({ text: taskText, done: false });
+            newTaskInput.value = '';
+            renderTodoList();
+        }
+    });
+
+    todoList.addEventListener('change', (e) => {
+        if (e.target.type === 'checkbox') {
+            const index = e.target.dataset.index;
+            initialTasks[index].done = e.target.checked;
+            renderTodoList();
+        }
+    });
+
+    // --- Autocomplete Logic ---
+    function setupAutocomplete(inputElement, suggestionsElement, data) {
+        inputElement.addEventListener('input', () => {
+            const value = inputElement.value.toLowerCase();
+            suggestionsElement.innerHTML = '';
+            if (!value) {
+                suggestionsElement.classList.add('hidden');
+                return;
+            }
+
+            const filteredData = data.filter(item => item.toLowerCase().includes(value));
+
+            if (filteredData.length > 0) {
+                filteredData.forEach(item => {
+                    const div = document.createElement('div');
+                    div.textContent = item;
+                    div.classList.add('suggestion-item');
+                    div.addEventListener('click', () => {
+                        inputElement.value = item;
+                        suggestionsElement.classList.add('hidden');
+                    });
+                    suggestionsElement.appendChild(div);
+                });
+                suggestionsElement.classList.remove('hidden');
+            } else {
+                suggestionsElement.classList.add('hidden');
+            }
+        });
+    }
+
+    setupAutocomplete(locationInput, locationSuggestions, mockLocations);
+    setupAutocomplete(pastCropsInput, pastCropsSuggestions, mockCrops);
+    
+    // Global click listener to hide suggestions
+    document.addEventListener('click', (e) => {
+        if (e.target !== locationInput && !locationSuggestions.contains(e.target)) {
+            locationSuggestions.classList.add('hidden');
+        }
+        if (e.target !== pastCropsInput && !pastCropsSuggestions.contains(e.target)) {
+            pastCropsSuggestions.classList.add('hidden');
+        }
+    });
+
+    navButtons.forEach(button => button.addEventListener('click', () => showPage(button.dataset.page)));
+    if (dashboardButton) dashboardButton.addEventListener('click', () => showPage('dashboard'));
+    if (startSuggestionBtn) startSuggestionBtn.addEventListener('click', () => showPage('recommendation'));
+
+    if (getRecommendationBtn) {
+        getRecommendationBtn.addEventListener('click', () => {
+            if(recommendationResults) recommendationResults.classList.remove('hidden');
+            if(recommendationResults) recommendationResults.classList.add('fade-in');
+        });
+    }
+
+    if (uploadPhotoButton) {
+        uploadPhotoButton.addEventListener('click', () => {
+            const diseaseResult = document.getElementById('disease-result');
+            if (diseaseResult) diseaseResult.classList.remove('hidden');
+        });
+    }
+
+    // --- Chatbot Logic ---
+    const chatbotToggle = document.getElementById('chatbot-toggle');
+    const chatbotWindow = document.getElementById('chatbot-window');
+    
+    function toggleChatbot() {
+        chatbotWindow.classList.toggle('hidden');
+        chatbotWindow.classList.toggle('flex');
+    }
+
+    if (chatbotToggle && chatbotWindow) {
+        chatbotToggle.addEventListener('click', toggleChatbot);
+    }
+    if(closeChatbotBtn) {
+        closeChatbotBtn.addEventListener('click', toggleChatbot);
+    }
+
+    function addChatMessage(message, sender) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('text-sm', 'p-2', 'rounded-lg', 'w-fit', 'max-w-[85%]');
+        if (sender === 'user') {
+            messageElement.classList.add('bg-violet-600', 'self-end', 'text-white');
+        } else {
+            messageElement.classList.add('bg-slate-700', 'self-start');
+        }
+        messageElement.textContent = message;
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function showTypingIndicator() {
+        const indicator = document.createElement('div');
+        indicator.id = 'typing-indicator';
+        indicator.classList.add('self-start', 'flex', 'items-center', 'space-x-1', 'p-2');
+        indicator.innerHTML = `
+            <div class="w-2 h-2 bg-slate-500 rounded-full typing-dot"></div>
+            <div class="w-2 h-2 bg-slate-500 rounded-full typing-dot"></div>
+            <div class="w-2 h-2 bg-slate-500 rounded-full typing-dot"></div>
+        `;
+        chatMessages.appendChild(indicator);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+        const indicator = document.getElementById('typing-indicator');
+        if (indicator) {
+            indicator.remove();
+        }
+    }
+
+    function handleChatSend() {
+        const userInput = chatbotInput.value.trim();
+        if (userInput) {
+            addChatMessage(userInput, 'user');
+            chatbotInput.value = '';
+            showTypingIndicator();
+
+            setTimeout(() => {
+                hideTypingIndicator();
+                const lang = languageSelector.value || 'en';
+                const responses = translations[lang].chatbot_responses || translations.en.chatbot_responses;
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                addChatMessage(randomResponse, 'bot');
+            }, 1200);
+        }
+    }
+
+    if (chatbotSend) chatbotSend.addEventListener('click', handleChatSend);
+    if(chatbotInput) chatbotInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleChatSend());
+
+    // --- Market Prices Logic ---
+    function populateStates() {
+        stateSelect.innerHTML = `<option value="">Select State</option>`;
+        for (const state in marketData) {
+            const option = document.createElement('option');
+            option.value = state;
+            option.textContent = state;
+            stateSelect.appendChild(option);
+        }
+    }
+
+    function populateDistricts(state) {
+        districtSelect.innerHTML = `<option value="">Select District</option>`;
+        mandiSelect.innerHTML = `<option value="">Select Mandi</option>`;
+        if (state && marketData[state]) {
+            for (const district in marketData[state]) {
+                const option = document.createElement('option');
+                option.value = district;
+                option.textContent = district;
+                districtSelect.appendChild(option);
+            }
+        }
+    }
+
+    function populateMandis(state, district) {
+        mandiSelect.innerHTML = `<option value="">Select Mandi</option>`;
+        if (state && district && marketData[state][district]) {
+            for (const mandi in marketData[state][district]) {
+                const option = document.createElement('option');
+                option.value = mandi;
+                option.textContent = mandi;
+                mandiSelect.appendChild(option);
+            }
+        }
+    }
+    
+    function updateMarketTable(data) {
+        marketTableBody.innerHTML = '';
+        if (!data || data.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td colspan="4" class="text-center p-4 text-slate-400">No data available for the selected market.</td>`;
+            marketTableBody.appendChild(row);
+            return;
+        }
+
+        data.forEach(item => {
+            const row = document.createElement('tr');
+            row.classList.add('border-b', 'border-slate-700');
+            const trendColor = item.trend >= 0 ? 'text-emerald-500' : 'text-red-500';
+            const trendIcon = item.trend >= 0 ? '▲' : '▼';
+
+            row.innerHTML = `
+                <td class="p-3 font-semibold">${item.mandi}</td>
+                <td class="p-3">${item.crop}</td>
+                <td class="p-3 font-bold ${trendColor}">₹${item.price.toLocaleString('en-IN')}</td>
+                <td class="p-3 ${trendColor}">${trendIcon} ${Math.abs(item.trend)}%</td>
+            `;
+            marketTableBody.appendChild(row);
+        });
+    }
+
+    stateSelect.addEventListener('change', () => {
+        populateDistricts(stateSelect.value);
+    });
+
+    districtSelect.addEventListener('change', () => {
+        populateMandis(stateSelect.value, districtSelect.value);
+    });
+
+    searchPricesBtn.addEventListener('click', () => {
+        const state = stateSelect.value;
+        const district = districtSelect.value;
+        const mandi = mandiSelect.value;
+
+        if (state && district && mandi) {
+            const data = marketData[state][district][mandi];
+            updateMarketTable(data);
+            
+            const firstCropData = data.slice(0, 1).map(item => {
+                let prices = [];
+                let currentPrice = item.price;
+                for (let i = 0; i < 7; i++) {
+                    prices.unshift(currentPrice);
+                    currentPrice -= Math.floor(Math.random() * (item.price * 0.02) - (item.price * 0.01));
+                }
+                return { crop: item.crop, price: item.price, trend: item.trend, historical: prices };
+            });
+
+            if (firstCropData.length > 0) {
+                createOrUpdatePriceChart(mandi, firstCropData);
+            }
+
+        } else {
+            updateMarketTable([]);
+            const lang = languageSelector.value || 'en';
+            createOrUpdatePriceChart(translations[lang].market_select_mandi, []);
+            marketChartTitleElement.textContent = translations[lang].market_chart_title_default;
+        }
+    });
+
+    // --- Initial Load ---
+    if (languageSelector) {
+        languageSelector.addEventListener('change', (e) => {
+            applyTranslations(e.target.value);
+            renderTodoList(); // Re-render to-do list with new language
+        });
+    }
+    
+    showPage('home');
+    applyTranslations(languageSelector.value);
+    populateStates();
+    renderTodoList();
+});
+</script>
+
+</body>
+</html>
+
+
+
+
