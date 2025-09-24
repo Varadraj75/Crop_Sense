@@ -1,0 +1,9 @@
+Crop,Temparature,Humidity ,Moisture,Soil Type,Crop Type,Nitrogen,Potassium,Phosphorous
+rice,22,82,1,Loamy,Cereal,80,45,35
+maize,25,80,1,Loamy,Cereal,85,50,40
+chickpea,20,75,1,Sandy,Pulse,70,40,30
+kidneybeans,22,78,1,Loamy,Pulse,75,42,32
+pigeonpeas,23,81,1,Clay,Pulse,78,48,38
+mothbeans,21,76,1,Sandy,Pulse,72,38,28
+mungbean,24,79,1,Loamy,Pulse,82,46,36
+blackgram,22,77,1,Clay,Pulse,76,44,34
