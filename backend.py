@@ -162,8 +162,8 @@ BHUVAN_BASE = "https://bhuvan-app1.nrsc.gov.in/api"
 BHUVAN_TOKEN = "7c6df3895328e60658ceb5148258c539e504a429"
 
 # OpenWeather API Configuration
-OPENWEATHER_API_KEY = "e43dc511613c6f3d5dd79733bbdc79aa"
-OPENWEATHER_BASE = "https://api.openweathermap.org/data/2.5"
+OPENWEATHER_API_KEY = "none"
+OPENWEATHER_BASE = "none"
 
 # Performance optimization settings
 USE_BHUVAN_API = False  # Disable slow Bhuvan APIs for faster response
