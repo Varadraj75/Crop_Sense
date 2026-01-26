@@ -50,6 +50,54 @@ Through a multilingual mobile application, the platform provides **crop recommen
 ## 👥 Team  
 This project is being developed as part of the **Smart India Hackathon (SIH)**.  
 
+## 🤝 Contributors  
+
+Thanks to these amazing people who contributed to this project 💙  
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/pranjal270">
+        <img src="https://avatars.githubusercontent.com/u/215149497?v=4" width="100px;" alt="Pranjal Thange"/><br />
+        <sub><b>Pranjal Thange</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/Soumya-codr">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXoA3bTx37vbIP6jnmCmkpguxAXoNvMJrPBg&s" width="100px;" alt="Soumya Sagar"/><br />
+        <sub><b>Soumya Sagar</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/Varadraj75">
+        <img src="https://avatars.githubusercontent.com/u/67114314?v=4" width="100px;" alt="Varad Raj Aggrawal"/><br />
+        <sub><b>Varad Raj Aggrawal</b></sub>
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/aashu2006">
+        <img src="https://avatars.githubusercontent.com/u/170659176?v=4" width="100px;" alt="Akshat Patil"/><br />
+        <sub><b>Akshat Patil</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/nextgendev2029">
+        <img src="https://avatars.githubusercontent.com/u/233024148?v=4" width="100px;" alt="Tuhin Mondal"/><br />
+        <sub><b>Tuhin Mondal</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/shellyco-code">
+        <img src="https://avatars.githubusercontent.com/u/227555438?v=4" width="100px;" alt="Shelly Chahar"/><br />
+        <sub><b>Shelly Chahar</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
+
+
 ---
 
 ## 📜 License  
